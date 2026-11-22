@@ -13,19 +13,22 @@ endorsed or sponsored by YouTube or Google.
 
 ## Features
 
-- **Home:** a dashboard with the clock, a dark map following the car, what is playing with
-  big controls, and quick actions (Trending, Live, Cari, Navigasi).
-- **YouTube:** search, categories, Live and an endless grid. Videos play without ads, with
-  SponsorBlock skipping sponsor, intro, outro, self-promotion and non-music segments. 360p,
-  480p and 720p (HLS, where YouTube offers it) or Audio Only. Picture-in-picture over other
-  apps, playback in the background and with the screen off, autoplay, and resume where you
-  left off.
-- **Musik:** large artwork and controls, swipe left or right to skip, Audio Only.
+- **Beranda** (home): a dashboard with the clock, a dark map following the car, what is
+  playing with big controls, and quick actions (Trending, Live, Cari, Navigasi).
+- **YouTube:** search by typing or by voice, your last three searches one tap away,
+  categories, Live and an endless grid. Videos play without ads, with SponsorBlock skipping
+  sponsor, intro, outro, self-promotion and non-music segments. 360p, 480p and 720p (HLS,
+  where YouTube offers it) or Audio Only. Picture-in-picture over other apps, playback in the
+  background and with the screen off, autoplay (Putar otomatis), 10-second jumps, and resume
+  where you left off.
+- **Musik:** large artwork and controls, swipe left or right to skip, Audio Only (Audio
+  saja).
 - **Steering-wheel and Bluetooth buttons:** play, pause, next, previous and seek through the
   phone's media session, also from the notification and the lock screen.
-- **Navigation:** place search as you type (nearby first), route preview with alternatives
-  and toll markers, Indonesian voice prompts, automatic rerouting, guidance that keeps running
-  in the background, and a hand-off to Google Maps.
+- **Peta** (maps and navigation): a dark map with readable roads, place search as you type
+  or by voice (nearby first), route preview with alternatives and toll markers, Indonesian
+  voice prompts, automatic rerouting, guidance that keeps running in the background, and a
+  hand-off to Google Maps.
 - **Made for the road:** playback and the video grid recover by themselves after a network
   drop (tunnels), errors are kept in a log on the phone, and it stays smooth on mid-range
   phones (developed on a Samsung Galaxy A6+ with Android 10).

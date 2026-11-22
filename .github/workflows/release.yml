@@ -73,11 +73,18 @@ jobs:
           apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
           for apk in dist/*.apk; do
             certs=$("$apksigner" verify --print-certs "$apk")
+            echo "$certs"
             echo "$certs" | grep -q 'certificate DN: CN=Kemudi' || {
-              echo "::error::$apk is not signed with the Kemudi key"; echo "$certs"; exit 1; }
+              echo "::error::$apk is not signed with the Kemudi key"; exit 1; }
           done
+          # Newer apksigner names signers "Signer (minSdkVersion=..., ...)" instead of
+          # "Signer #1", so match any signer line.
           "$apksigner" verify --print-certs "dist/kemudi-$version-arm64-v8a.apk" \
-            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' > "$RUNNER_TEMP/cert-sha256"
+            | sed -n 's/^Signer.*certificate SHA-256 digest: //p' | head -n 1 > "$RUNNER_TEMP/cert-sha256"
+          if [ ! -s "$RUNNER_TEMP/cert-sha256" ]; then
+            echo "::error::apksigner printed no certificate SHA-256 digest"
+            exit 1
+          fi
 
           # Android 15+ phones with 16 KB memory pages load only native libraries whose
           # LOAD segments are aligned to at least 16 KB.

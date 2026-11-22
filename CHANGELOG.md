@@ -15,8 +15,18 @@ starts with fresh settings.
   release key.
 - Release builds route with the public OSRM servers; Mapbox live traffic needs a build with
   your own token (see the README).
+- Menus are now Beranda, Peta, YouTube and Musik; Autoplay reads "Putar otomatis" and the
+  route choice "Lalin" (live traffic) or "Biasa".
+- Roads stand out on the dark map: minor roads grey, major roads amber.
+- Smaller fixes for the driver: the destination search opens with the keyboard ready, a
+  larger seek thumb, a labelled Musik button on the inline player, the "Lanjutkan" tile shows
+  two lines of title, and the guidance banner's "Lalu" line appears only near the maneuver.
 
 ### Added
+- Voice search: a microphone in the YouTube and place search fields opens Google's speech
+  dialog (no extra permission).
+- The last three YouTube searches as chips under the search field.
+- 10-second jump buttons labelled "10", also in Fullscreen.
 - A status-bar icon for the playback and navigation notifications.
 
 ### Carried over from the private builds

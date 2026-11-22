@@ -19,7 +19,7 @@ val keystoreProperties = Properties().apply {
 val hasReleaseKey = keystorePropertiesFile.exists()
 
 android {
-    namespace = "com.carheadunit.youtube_car_headunit"
+    namespace = "io.github.rulyoctareza.kemudi"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -33,7 +33,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.carheadunit.youtube_car_headunit"
+        applicationId = "io.github.rulyoctareza.kemudi"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

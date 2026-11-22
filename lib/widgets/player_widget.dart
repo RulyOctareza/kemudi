@@ -85,7 +85,7 @@ class PlayerWidget extends StatelessWidget {
                   tooltip: 'Berikutnya',
                 ),
                 _SmallButton(
-                  icon: LucideIcons.music2,
+                  label: 'Musik',
                   tooltip: 'Layar Musik',
                   onTap: onOpenMusic,
                 ),
@@ -219,18 +219,17 @@ class _QualityTile extends StatelessWidget {
   }
 }
 
+/// Text button of the control row: the served quality, and the way to the Musik screen.
 class _SmallButton extends StatelessWidget {
   const _SmallButton({
     required this.tooltip,
     required this.onTap,
-    this.icon,
-    this.label,
+    required this.label,
   });
 
   final String tooltip;
   final VoidCallback onTap;
-  final IconData? icon;
-  final String? label;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -251,15 +250,16 @@ class _SmallButton extends StatelessWidget {
             width: 52,
             height: 44,
             child: Center(
-              child: icon != null
-                  ? Icon(icon, size: 20, color: CarTheme.textMuted)
-                  : FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        label ?? '',
-                        style: CarTheme.label.copyWith(color: CarTheme.text),
-                      ),
-                    ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    style: CarTheme.label.copyWith(color: CarTheme.text),
+                  ),
+                ),
+              ),
             ),
           ),
         ),

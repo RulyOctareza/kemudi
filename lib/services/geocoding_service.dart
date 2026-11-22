@@ -8,8 +8,9 @@ import 'package:latlong2/latlong.dart';
 import '../models/navigation.dart';
 import 'geo.dart';
 
-/// Same app id the map tiles send; identifies the app without personal data.
-const String kNavUserAgent = 'com.carheadunit.youtube_car_headunit/1.0';
+/// Names the app and where it lives, as the OSM, OSRM and Photon usage policies ask of a
+/// User-Agent; carries no personal data.
+const String kNavUserAgent = 'Kemudi (+https://github.com/RulyOctareza/kemudi)';
 
 /// Place search and reverse geocoding through Photon (photon.komoot.io).
 ///

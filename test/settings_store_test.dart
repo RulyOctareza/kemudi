@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:youtube_car_headunit/models/car_video.dart';
-import 'package:youtube_car_headunit/services/settings_store.dart';
+import 'package:kemudi/models/car_video.dart';
+import 'package:kemudi/services/settings_store.dart';
 
 void main() {
   test('defaults when nothing is stored', () async {
@@ -46,5 +46,16 @@ void main() {
     SharedPreferences.setMockInitialValues({'last_video': '{not json'});
     final store = await SettingsStore.load();
     expect(store.lastVideo, isNull);
+  });
+
+  test('search history keeps the newest three, without repeats', () async {
+    SharedPreferences.setMockInitialValues({});
+    final store = await SettingsStore.load();
+    expect(store.searchHistory, isEmpty);
+    for (final query in ['dewa 19', 'sheila on 7', ' ', 'Dewa 19', 'tulus', 'noah']) {
+      await store.addSearch(query);
+    }
+    expect(store.searchHistory, ['noah', 'tulus', 'Dewa 19']);
+    expect((await SettingsStore.load()).searchHistory, ['noah', 'tulus', 'Dewa 19']);
   });
 }

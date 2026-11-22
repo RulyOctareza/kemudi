@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtube_car_headunit/controllers/drive_simulator.dart';
-import 'package:youtube_car_headunit/controllers/navigation_controller.dart';
-import 'package:youtube_car_headunit/models/navigation.dart';
-import 'package:youtube_car_headunit/services/geo.dart';
+import 'package:kemudi/controllers/drive_simulator.dart';
+import 'package:kemudi/controllers/navigation_controller.dart';
+import 'package:kemudi/models/navigation.dart';
+import 'package:kemudi/services/geo.dart';
 
 import 'nav_test_utils.dart';
 

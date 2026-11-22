@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:youtube_car_headunit/services/polyline.dart';
+import 'package:kemudi/services/polyline.dart';
 
 void main() {
   test('decodes Google\'s reference polyline at precision 5', () {

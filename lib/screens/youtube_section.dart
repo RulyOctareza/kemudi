@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../controllers/feed_controller.dart';
 import '../controllers/playback_controller.dart';
 import '../models/car_video.dart';
+import '../services/platform_bridge.dart';
+import '../services/settings_store.dart';
 import '../widgets/listenable_selector.dart';
 import '../widgets/player_widget.dart';
 import '../widgets/search_header.dart';
@@ -19,7 +21,13 @@ class YouTubeSection extends StatelessWidget {
     required this.onSelect,
     required this.onOpenMusic,
     required this.onOpenFullscreen,
+    this.settings,
+    this.voice,
   });
+
+  /// Keeps the driver's last searches; none are offered without it.
+  final SettingsStore? settings;
+  final VoiceInput? voice;
 
   static const List<FeedCategory> categories = [
     (label: 'Trending', query: null),
@@ -69,8 +77,13 @@ class YouTubeSection extends StatelessWidget {
                 focusNode: searchFocus,
                 categories: categories,
                 activeQuery: feed.isTrending ? '' : feed.query,
+                recentQueries: settings?.searchHistory ?? const [],
+                voice: voice,
                 onSearch: (query) {
                   searchFocus.unfocus();
+                  // Saved before the search starts: the feed's change rebuilds this
+                  // header, which then shows the query as a chip.
+                  settings?.addSearch(query);
                   feed.search(query);
                 },
                 onCategory: _openCategory,

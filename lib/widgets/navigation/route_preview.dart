@@ -296,7 +296,7 @@ class _TollSwitch extends StatelessWidget {
                   ),
                   if (!enabled)
                     Text(
-                      'Hindari tol hanya dengan Mapbox',
+                      'Hanya dengan rute Lalin',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: CarTheme.caption.copyWith(fontSize: 12),
@@ -313,7 +313,8 @@ class _TollSwitch extends StatelessWidget {
   }
 }
 
-/// Mapbox (live traffic) or OSM routing; shown only when the build has a Mapbox token.
+/// Mapbox (live traffic, "Lalin") or OSRM ("Biasa") routing; shown only when
+/// the build has a Mapbox token. The labels name what the driver gets, not the provider.
 class _ProviderToggle extends StatelessWidget {
   const _ProviderToggle({required this.value, required this.onChanged});
 
@@ -362,8 +363,8 @@ class _ProviderToggle extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              segment(RouteProvider.mapbox, 'Mapbox'),
-              segment(RouteProvider.osrm, 'OSM'),
+              segment(RouteProvider.mapbox, 'Lalin'),
+              segment(RouteProvider.osrm, 'Biasa'),
             ],
           ),
         ),

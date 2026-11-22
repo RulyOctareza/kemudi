@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:youtube_car_headunit/controllers/navigation_controller.dart';
-import 'package:youtube_car_headunit/models/navigation.dart';
-import 'package:youtube_car_headunit/services/geo.dart';
-import 'package:youtube_car_headunit/services/recent_destinations.dart';
+import 'package:kemudi/controllers/navigation_controller.dart';
+import 'package:kemudi/models/navigation.dart';
+import 'package:kemudi/services/geo.dart';
+import 'package:kemudi/services/recent_destinations.dart';
 
 import 'nav_test_utils.dart';
 

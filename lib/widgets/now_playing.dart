@@ -43,7 +43,9 @@ class Artwork extends StatelessWidget {
               // Quiet placeholder until the first frame, so large artwork never leaves
               // an empty hole while it downloads.
               frameBuilder: (context, child, frame, wasSynchronouslyLoaded) =>
-                  frame == null && !wasSynchronouslyLoaded ? placeholder : child,
+                  frame == null && !wasSynchronouslyLoaded
+                      ? placeholder
+                      : child,
               errorBuilder: (_, __, ___) => fallbackUrl == null
                   ? placeholder
                   : Image.network(
@@ -200,32 +202,35 @@ class NowPlayingCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(CarTheme.radius),
                 child: Padding(
                   padding: const EdgeInsets.all(10),
-                  child: Row(
+                  // The title under the picture, on the tile's full width: beside it
+                  // only about fifteen characters fit.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                        width: 72,
-                        height: 44,
-                        child: Artwork(
-                          url: resume.thumbnail,
-                          radius: CarTheme.radiusSmall,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Lanjutkan', style: CarTheme.label),
-                            Text(
-                              resume.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: CarTheme.body,
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 72,
+                            height: 44,
+                            child: Artwork(
+                              url: resume.thumbnail,
+                              radius: CarTheme.radiusSmall,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text('Lanjutkan', style: CarTheme.label),
+                          ),
+                          const Icon(LucideIcons.play, color: CarTheme.accent),
+                        ],
                       ),
-                      const Icon(LucideIcons.play, color: CarTheme.accent),
+                      const SizedBox(height: 8),
+                      Text(
+                        resume.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: CarTheme.body,
+                      ),
                     ],
                   ),
                 ),
@@ -303,7 +308,8 @@ class NowPlayingMini extends StatelessWidget {
                   ),
                 ),
                 ControlButton(
-                  icon: playback.isPlaying ? LucideIcons.pause : LucideIcons.play,
+                  icon:
+                      playback.isPlaying ? LucideIcons.pause : LucideIcons.play,
                   size: 52,
                   primary: true,
                   loading: playback.isLoading,

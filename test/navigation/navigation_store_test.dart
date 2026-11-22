@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:youtube_car_headunit/models/navigation.dart';
-import 'package:youtube_car_headunit/services/geo.dart';
-import 'package:youtube_car_headunit/services/recent_destinations.dart';
+import 'package:kemudi/models/navigation.dart';
+import 'package:kemudi/services/geo.dart';
+import 'package:kemudi/services/recent_destinations.dart';
 
 Place _place(String name, double lat) =>
     Place(name: name, address: 'Jakarta', location: LatLng(lat, 106.8));

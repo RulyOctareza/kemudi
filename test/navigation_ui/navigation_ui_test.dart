@@ -4,21 +4,21 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:youtube_car_headunit/controllers/feed_controller.dart';
-import 'package:youtube_car_headunit/controllers/location_controller.dart';
-import 'package:youtube_car_headunit/controllers/navigation_controller.dart';
-import 'package:youtube_car_headunit/controllers/playback_controller.dart';
-import 'package:youtube_car_headunit/models/navigation.dart';
-import 'package:youtube_car_headunit/screens/headunit_screen.dart';
-import 'package:youtube_car_headunit/services/car_audio_handler.dart';
-import 'package:youtube_car_headunit/services/geocoding_service.dart';
-import 'package:youtube_car_headunit/services/recent_destinations.dart';
-import 'package:youtube_car_headunit/services/routing_service.dart';
-import 'package:youtube_car_headunit/services/settings_store.dart';
-import 'package:youtube_car_headunit/services/video_source.dart';
-import 'package:youtube_car_headunit/services/voice_guidance.dart';
-import 'package:youtube_car_headunit/services/youtube_worker.dart';
-import 'package:youtube_car_headunit/theme/car_theme.dart';
+import 'package:kemudi/controllers/feed_controller.dart';
+import 'package:kemudi/controllers/location_controller.dart';
+import 'package:kemudi/controllers/navigation_controller.dart';
+import 'package:kemudi/controllers/playback_controller.dart';
+import 'package:kemudi/models/navigation.dart';
+import 'package:kemudi/screens/headunit_screen.dart';
+import 'package:kemudi/services/car_audio_handler.dart';
+import 'package:kemudi/services/geocoding_service.dart';
+import 'package:kemudi/services/recent_destinations.dart';
+import 'package:kemudi/services/routing_service.dart';
+import 'package:kemudi/services/settings_store.dart';
+import 'package:kemudi/services/video_source.dart';
+import 'package:kemudi/services/voice_guidance.dart';
+import 'package:kemudi/services/youtube_worker.dart';
+import 'package:kemudi/theme/car_theme.dart';
 
 /// A street running east from the start, then a left turn north to the destination.
 const _start = LatLng(-6.2, 106.8);
@@ -266,12 +266,12 @@ void main() {
     expect(find.text('TOL'), findsOneWidget, reason: 'only the alternative uses a toll road');
     expect(find.text('Hindari tol'), findsOneWidget);
     // OSRM cannot avoid tolls: the switch is off and disabled, and says why.
-    expect(find.text('Hindari tol hanya dengan Mapbox'), findsOneWidget);
+    expect(find.text('Hanya dengan rute Lalin'), findsOneWidget);
     expect(tester.widget<Switch>(find.byType(Switch)).onChanged, isNull);
     expect(find.text('Mulai'), findsOneWidget);
     expect(find.text('Google Maps'), findsOneWidget);
     // No Mapbox token in tests: no provider toggle.
-    expect(find.text('Mapbox'), findsNothing);
+    expect(find.text('Lalin'), findsNothing);
     expect(find.textContaining('Rute: OSRM'), findsWidgets);
 
     // The alternative and the chosen route are drawn.
@@ -358,7 +358,7 @@ void main() {
     expect(cameraNow().rotation, 0);
 
     // Home shows the turn on its map card.
-    await tester.tap(find.bySemanticsLabel('Home'));
+    await tester.tap(find.bySemanticsLabel('Beranda'));
     await tester.pumpAndSettle();
     expect(find.text('Belok kiri ke Jalan Thamrin'), findsOneWidget);
     expect(find.text('Navigasi'), findsNothing);
@@ -395,7 +395,7 @@ void main() {
   testWidgets('a long press on the map sets point B and names it',
       (tester) async {
     final shell = await _pumpShell(tester);
-    await tester.tap(find.bySemanticsLabel('Maps'));
+    await tester.tap(find.bySemanticsLabel('Peta'));
     await tester.pumpAndSettle();
 
     await tester.longPress(find.byType(FlutterMap));
@@ -412,10 +412,10 @@ void main() {
     final shell = await _pumpShell(tester, mapbox: true);
     await _searchAndPreview(tester, shell);
 
-    expect(find.text('Mapbox'), findsOneWidget);
-    expect(find.text('OSM'), findsOneWidget);
+    expect(find.text('Lalin'), findsOneWidget);
+    expect(find.text('Biasa'), findsOneWidget);
     expect(find.textContaining('Rute: Mapbox'), findsWidgets);
-    expect(find.text('Hindari tol hanya dengan Mapbox'), findsNothing);
+    expect(find.text('Hanya dengan rute Lalin'), findsNothing);
     expect(tester.widget<Switch>(find.byType(Switch)).onChanged, isNotNull);
 
     final colors = tester
@@ -425,10 +425,10 @@ void main() {
         .toSet();
     expect(colors, containsAll([CarTheme.accent, const Color(0xFFE5484D)]));
 
-    await tester.tap(find.text('OSM'));
+    await tester.tap(find.text('Biasa'));
     await tester.pumpAndSettle();
     expect(shell.navigation.provider, RouteProvider.osrm);
-    expect(find.text('Hindari tol hanya dengan Mapbox'), findsOneWidget);
+    expect(find.text('Hanya dengan rute Lalin'), findsOneWidget);
 
     await _unmount(tester);
   });
@@ -501,7 +501,7 @@ void main() {
     await shell.navigation.previewTo(
       Place(name: 'Selatan', location: points.last),
     );
-    await tester.tap(find.bySemanticsLabel('Maps'));
+    await tester.tap(find.bySemanticsLabel('Peta'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Mulai'));
     await tester.pump();
@@ -587,7 +587,7 @@ void main() {
     await tester.pump(const Duration(seconds: 4));
     await tester.tap(find.bySemanticsLabel('YouTube'));
     await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('Maps'));
+    await tester.tap(find.bySemanticsLabel('Peta'));
     await tester.pumpAndSettle();
 
     Future<void> previewAndStart() async {
@@ -598,7 +598,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Monas'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('OSM'));
+      await tester.tap(find.text('Biasa'));
       await tester.pumpAndSettle();
     }
 

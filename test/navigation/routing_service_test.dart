@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:youtube_car_headunit/models/navigation.dart';
-import 'package:youtube_car_headunit/services/geo.dart';
-import 'package:youtube_car_headunit/services/routing_service.dart';
+import 'package:kemudi/models/navigation.dart';
+import 'package:kemudi/services/geo.dart';
+import 'package:kemudi/services/routing_service.dart';
 
 import 'nav_test_utils.dart';
 

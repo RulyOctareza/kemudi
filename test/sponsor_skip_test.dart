@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtube_car_headunit/models/car_video.dart';
-import 'package:youtube_car_headunit/utils/sponsor_skip.dart';
+import 'package:kemudi/models/car_video.dart';
+import 'package:kemudi/utils/sponsor_skip.dart';
 
 void main() {
   const segments = [

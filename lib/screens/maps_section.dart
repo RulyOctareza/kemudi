@@ -8,6 +8,7 @@ import '../controllers/location_controller.dart';
 import '../controllers/navigation_controller.dart';
 import '../controllers/playback_controller.dart';
 import '../models/navigation.dart';
+import '../services/platform_bridge.dart';
 import '../services/voice_guidance.dart';
 import '../theme/car_theme.dart';
 import '../widgets/car_map.dart';
@@ -34,7 +35,11 @@ class MapsSection extends StatelessWidget {
     required this.onOpenMusic,
     required this.onGoogleMaps,
     this.voice,
+    this.voiceInput,
   });
+
+  /// Speech input for the destination search.
+  final VoiceInput? voiceInput;
 
   /// Width of the left column (search, preview, guidance); the map keeps the car and the
   /// fitted routes to the right of it.
@@ -137,6 +142,7 @@ class MapsSection extends StatelessWidget {
         navigation: navigation,
         location: location,
         compact: compact,
+        voice: voiceInput,
         onClose: () => searchOpen.value = false,
       ),
     );

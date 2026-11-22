@@ -83,7 +83,7 @@ class CarAudioHandler extends BaseAudioHandler {
         id: video.id,
         title: video.title,
         artist: video.uploader,
-        album: 'YouTube Car',
+        album: 'Kemudi',
         artUri: art,
         duration: video.isLive || length <= Duration.zero ? null : length,
       ),

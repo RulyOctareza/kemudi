@@ -213,10 +213,15 @@ class ControlButton extends StatelessWidget {
     this.primary = false,
     this.loading = false,
     this.tooltip,
+    this.badge,
   });
 
   final IconData icon;
   final VoidCallback? onPressed;
+
+  /// Short text drawn in the middle of the icon, e.g. "10" inside the circular arrow of
+  /// the ten-second jumps, which alone reads as reload.
+  final String? badge;
 
   /// Outer diameter in dp; the icon scales with it.
   final double size;
@@ -227,6 +232,9 @@ class ControlButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final foreground = primary ? CarTheme.onAccent : CarTheme.text;
+    final color =
+        onPressed == null ? foreground.withValues(alpha: 0.35) : foreground;
+    final iconSize = size * (primary ? 0.42 : (badge == null ? 0.5 : 0.62));
     final button = Material(
       color: primary ? CarTheme.accent : Colors.transparent,
       shape: const CircleBorder(),
@@ -244,13 +252,24 @@ class ControlButton extends StatelessWidget {
                       color: foreground,
                     ),
                   )
-                : Icon(
-                    icon,
-                    size: size * (primary ? 0.42 : 0.5),
-                    color: onPressed == null
-                        ? foreground.withValues(alpha: 0.35)
-                        : foreground,
-                  ),
+                : badge == null
+                    ? Icon(icon, size: iconSize, color: color)
+                    : Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(icon, size: iconSize, color: color),
+                          Text(
+                            badge!,
+                            textScaler: TextScaler.noScaling,
+                            style: TextStyle(
+                              fontSize: iconSize * 0.3,
+                              height: 1.0,
+                              fontWeight: FontWeight.w700,
+                              color: color,
+                            ),
+                          ),
+                        ],
+                      ),
           ),
         ),
       ),

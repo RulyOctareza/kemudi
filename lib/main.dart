@@ -57,7 +57,7 @@ Future<void> main() async {
   final navigationStore = await NavigationStore.load();
   final audioHandler = await _initAudioService();
   runApp(
-    YouTubeCarApp(
+    KemudiApp(
       audioHandler: audioHandler,
       settings: settings,
       navigationStore: navigationStore,
@@ -70,9 +70,10 @@ Future<CarAudioHandler> _initAudioService() async {
     return await AudioService.init(
       builder: CarAudioHandler.new,
       config: const AudioServiceConfig(
-        androidNotificationChannelId:
-            'com.carheadunit.youtube_car_headunit.playback',
+        androidNotificationChannelId: 'io.github.rulyoctareza.kemudi.playback',
         androidNotificationChannelName: 'Pemutaran',
+        // Monochrome status-bar icon; the adaptive launcher icon cannot serve as one.
+        androidNotificationIcon: 'drawable/ic_stat_kemudi',
         // Staying in the foreground while paused lets a steering-wheel "play" resume from
         // the background; Android 12+ refuses to restart a foreground service from there.
         androidStopForegroundOnPause: false,
@@ -85,8 +86,8 @@ Future<CarAudioHandler> _initAudioService() async {
   }
 }
 
-class YouTubeCarApp extends StatefulWidget {
-  const YouTubeCarApp({
+class KemudiApp extends StatefulWidget {
+  const KemudiApp({
     super.key,
     required this.audioHandler,
     required this.settings,
@@ -108,10 +109,10 @@ class YouTubeCarApp extends StatefulWidget {
   final bool platformServices;
 
   @override
-  State<YouTubeCarApp> createState() => _YouTubeCarAppState();
+  State<KemudiApp> createState() => _KemudiAppState();
 }
 
-class _YouTubeCarAppState extends State<YouTubeCarApp> {
+class _KemudiAppState extends State<KemudiApp> {
   late final YouTubeWorker _youtube = YouTubeWorker();
   late final FeedController _feed =
       FeedController(widget.videoSource ?? _youtube);
@@ -167,7 +168,7 @@ class _YouTubeCarAppState extends State<YouTubeCarApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'YouTube Car',
+      title: 'Kemudi',
       debugShowCheckedModeBanner: false,
       theme: CarTheme.darkTheme,
       home: HeadunitScreen(

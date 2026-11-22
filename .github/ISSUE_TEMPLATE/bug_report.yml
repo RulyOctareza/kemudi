@@ -1,0 +1,61 @@
+name: Bug report
+description: Something in Kemudi does not work as it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please check the [known limits](https://github.com/RulyOctareza/kemudi#known-limits) first; stream problems often go away with the newest release.
+  - type: input
+    id: version
+    attributes:
+      label: Kemudi version
+      description: Android Settings → Apps → Kemudi, or the release you installed.
+      placeholder: "2.0.0"
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and Android version
+      placeholder: Samsung Galaxy A6+ (SM-A605G), Android 10
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - YouTube playback
+        - Search and video grid
+        - Musik / Audio Only
+        - Steering-wheel or Bluetooth buttons
+        - Picture-in-picture
+        - Maps and navigation
+        - Install or update
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open YouTube and search "..."
+        2. Tap the first video
+        3. ...
+  - type: textarea
+    id: log
+    attributes:
+      label: Error log
+      description: |
+        Kemudi keeps uncaught errors and playback failures on the phone. With USB debugging and adb:
+        `adb pull /sdcard/Android/data/io.github.rulyoctareza.kemudi/files/errors.log`
+        Paste the part around the problem and remove anything private.
+      render: text

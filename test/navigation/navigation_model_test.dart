@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:youtube_car_headunit/models/navigation.dart';
-import 'package:youtube_car_headunit/services/geo.dart';
+import 'package:kemudi/models/navigation.dart';
+import 'package:kemudi/services/geo.dart';
 
 NavRoute _route(List<Congestion>? congestion) {
   final points = <LatLng>[const LatLng(-6.2, 106.8)];

@@ -7,7 +7,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../controllers/location_controller.dart';
 import '../../controllers/navigation_controller.dart';
 import '../../models/navigation.dart';
+import '../../services/platform_bridge.dart';
 import '../../theme/car_theme.dart';
+import '../search_header.dart';
 import 'nav_format.dart';
 
 /// Destination search with results while typing, and the recent destinations while the
@@ -23,7 +25,11 @@ class SearchPanel extends StatefulWidget {
     required this.location,
     required this.onClose,
     this.compact = false,
+    this.voice,
   });
+
+  /// Speech input for the field; no mic button without it.
+  final VoiceInput? voice;
 
   static const debounce = Duration(milliseconds: 400);
   static const minChars = 3;
@@ -42,6 +48,7 @@ class SearchPanel extends StatefulWidget {
 
 class _SearchPanelState extends State<SearchPanel> {
   final TextEditingController _text = TextEditingController();
+  final FocusNode _focus = FocusNode();
   Timer? _debounce;
   int _sequence = 0;
   List<Place> _results = const [];
@@ -49,6 +56,17 @@ class _SearchPanelState extends State<SearchPanel> {
   String? _error;
 
   String get _query => _text.text.trim();
+
+  @override
+  void initState() {
+    super.initState();
+    // Not `autofocus`: that is skipped when another field of the app (the YouTube
+    // search, kept mounted offstage) already holds the focus, and the keyboard then
+    // needs a second tap.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
+    });
+  }
 
   void _onChanged(String _) {
     _debounce?.cancel();
@@ -93,6 +111,16 @@ class _SearchPanelState extends State<SearchPanel> {
     }
   }
 
+  /// Fills the field from speech and searches at once; the keyboard closes so the
+  /// results get the panel's full height.
+  Future<void> _listen() async {
+    final heard = await widget.voice?.listen();
+    if (heard == null || !mounted) return;
+    _text.text = heard;
+    _focus.unfocus();
+    await _search();
+  }
+
   void _clear() {
     _text.clear();
     _onChanged('');
@@ -113,6 +141,7 @@ class _SearchPanelState extends State<SearchPanel> {
   void dispose() {
     _debounce?.cancel();
     _text.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -138,7 +167,7 @@ class _SearchPanelState extends State<SearchPanel> {
                 Expanded(
                   child: TextField(
                     controller: _text,
-                    autofocus: true,
+                    focusNode: _focus,
                     textInputAction: TextInputAction.search,
                     style: CarTheme.body,
                     onChanged: _onChanged,
@@ -153,7 +182,9 @@ class _SearchPanelState extends State<SearchPanel> {
                       suffixIcon: ListenableBuilder(
                         listenable: _text,
                         builder: (context, _) => _text.text.isEmpty
-                            ? const SizedBox.shrink()
+                            ? (widget.voice == null
+                                ? const SizedBox.shrink()
+                                : MicButton(voice: widget.voice!, onPressed: _listen))
                             : IconButton(
                                 tooltip: 'Hapus',
                                 icon: const Icon(LucideIcons.x, size: 20),

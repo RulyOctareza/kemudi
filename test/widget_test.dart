@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:youtube_car_headunit/main.dart';
-import 'package:youtube_car_headunit/models/car_video.dart';
-import 'package:youtube_car_headunit/services/car_audio_handler.dart';
-import 'package:youtube_car_headunit/services/settings_store.dart';
-import 'package:youtube_car_headunit/services/video_source.dart';
+import 'package:kemudi/main.dart';
+import 'package:kemudi/models/car_video.dart';
+import 'package:kemudi/services/car_audio_handler.dart';
+import 'package:kemudi/services/settings_store.dart';
+import 'package:kemudi/services/video_source.dart';
 
 class _Source implements VideoSource {
   _Source({this.error});
@@ -46,7 +46,7 @@ Future<void> pumpApp(WidgetTester tester, VideoSource source) async {
   SharedPreferences.setMockInitialValues({});
   final settings = await SettingsStore.load();
   await tester.pumpWidget(
-    YouTubeCarApp(
+    KemudiApp(
       audioHandler: CarAudioHandler(),
       settings: settings,
       videoSource: source,
@@ -63,7 +63,7 @@ void main() {
   testWidgets('opens on the dashboard with the four menus', (tester) async {
     await pumpApp(tester, _Source());
 
-    for (final label in ['Home', 'Maps', 'YouTube', 'Musik']) {
+    for (final label in ['Beranda', 'Peta', 'YouTube', 'Musik']) {
       expect(find.bySemanticsLabel(label), findsOneWidget);
     }
     expect(find.text('Belum ada yang diputar'), findsOneWidget);

@@ -1,7 +1,7 @@
-name: youtube_car_headunit
-description: "A YouTube Clone Car Headunit application for smartphones with Adblocker, Premium features, Background Audio, and Steering Wheel button support."
+name: kemudi
+description: "Car head-unit app for Android phones: video and music player with SponsorBlock, steering-wheel media controls and turn-by-turn navigation."
 publish_to: 'none'
-version: 1.1.0+2
+version: 2.0.0+3
 
 environment:
   sdk: ^3.5.0

@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:latlong2/latlong.dart';
-import 'package:youtube_car_headunit/controllers/location_controller.dart';
-import 'package:youtube_car_headunit/models/navigation.dart';
-import 'package:youtube_car_headunit/services/geo.dart';
-import 'package:youtube_car_headunit/services/geocoding_service.dart';
-import 'package:youtube_car_headunit/services/polyline.dart';
-import 'package:youtube_car_headunit/services/routing_service.dart';
+import 'package:kemudi/controllers/location_controller.dart';
+import 'package:kemudi/models/navigation.dart';
+import 'package:kemudi/services/geo.dart';
+import 'package:kemudi/services/geocoding_service.dart';
+import 'package:kemudi/services/polyline.dart';
+import 'package:kemudi/services/routing_service.dart';
 
 String fixture(String name) =>
     File('test/fixtures/navigation/$name').readAsStringSync();

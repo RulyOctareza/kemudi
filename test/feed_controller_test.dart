@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtube_car_headunit/controllers/feed_controller.dart';
-import 'package:youtube_car_headunit/models/car_video.dart';
-import 'package:youtube_car_headunit/services/video_source.dart';
-import 'package:youtube_car_headunit/utils/auto_retry.dart';
+import 'package:kemudi/controllers/feed_controller.dart';
+import 'package:kemudi/models/car_video.dart';
+import 'package:kemudi/services/video_source.dart';
+import 'package:kemudi/utils/auto_retry.dart';
 
 CarVideo video(String id) => CarVideo(
       id: id,

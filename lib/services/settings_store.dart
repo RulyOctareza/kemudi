@@ -18,6 +18,10 @@ class SettingsStore {
   static const _kAutoplay = 'autoplay';
   static const _kLastVideo = 'last_video';
   static const _kLastPosition = 'last_position_seconds';
+  static const _kSearchHistory = 'search_history';
+
+  /// As many as fit in front of the category chips without pushing them off screen.
+  static const maxSearchHistory = 3;
 
   String? get quality => _prefs.getString(_kQuality);
 
@@ -37,6 +41,24 @@ class SettingsStore {
       debugPrint('Ignoring unreadable last video: $e');
       return null;
     }
+  }
+
+  /// The driver's own YouTube searches, newest first.
+  List<String> get searchHistory =>
+      _prefs.getStringList(_kSearchHistory) ?? const [];
+
+  Future<void> addSearch(String query) {
+    final text = query.trim();
+    if (text.isEmpty) return Future.value();
+    final history = [
+      text,
+      for (final old in searchHistory)
+        if (old.toLowerCase() != text.toLowerCase()) old,
+    ];
+    return _prefs.setStringList(
+      _kSearchHistory,
+      history.take(maxSearchHistory).toList(),
+    );
   }
 
   Duration get lastPosition =>

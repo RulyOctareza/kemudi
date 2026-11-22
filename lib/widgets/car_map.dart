@@ -32,6 +32,7 @@ class CarMap extends StatefulWidget {
     this.tilesEnabled = true,
     this.fitRoutes = false,
     this.overlayInsets = EdgeInsets.zero,
+    this.shortAttribution = false,
     this.onTap,
     this.onLongPress,
   });
@@ -56,6 +57,10 @@ class CarMap extends StatefulWidget {
 
   /// Parts of the map covered by panels; the car and fitted routes stay out of them.
   final EdgeInsets overlayInsets;
+
+  /// Only the OpenStreetMap credit while no route is set: the Home card is narrow and
+  /// has a button in its bottom corner, and shows no route or search result then.
+  final bool shortAttribution;
 
   @override
   State<CarMap> createState() => _CarMapState();
@@ -447,7 +452,7 @@ class _CarMapState extends State<CarMap> with SingleTickerProviderStateMixin {
               // filter over the layer on every frame.
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.carheadunit.youtube_car_headunit',
+                userAgentPackageName: 'io.github.rulyoctareza.kemudi',
                 tileProvider: _tiles,
               ),
             if (nav != null)
@@ -487,8 +492,10 @@ class _CarMapState extends State<CarMap> with SingleTickerProviderStateMixin {
               : ListenableBuilder(
                   listenable: nav,
                   builder: (context, _) => _Attribution(
-                    'Rute: ${_providerName(nav.route?.provider ?? nav.provider)}'
-                    ' · Pencarian: Photon · $_osmAttribution',
+                    widget.shortAttribution && nav.state == NavState.idle
+                        ? _osmAttribution
+                        : 'Rute: ${_providerName(nav.route?.provider ?? nav.provider)}'
+                            ' · Pencarian: Photon · $_osmAttribution',
                   ),
                 ),
         ),

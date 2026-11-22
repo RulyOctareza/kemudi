@@ -64,8 +64,15 @@ from a computer with `adb install kemudi-<version>-<abi>.apk`.
 
 ## Verify a download
 
-Every release lists the SHA-256 checksum of each APK (`SHA256SUMS.txt`) and the SHA-256
-fingerprint of the signing certificate. To compare on a computer:
+Every release lists the SHA-256 checksum of each APK (`SHA256SUMS.txt`). Every Kemudi APK is
+signed with the same certificate, `CN=Kemudi, O=Personal, C=ID`, whose SHA-256 fingerprint
+is:
+
+```
+9f918c6fd69f601171c3d0b59514630814f201936dff1e00b110e87132d0660c
+```
+
+To compare on a computer:
 
 ```sh
 sha256sum -c SHA256SUMS.txt

@@ -77,10 +77,10 @@ jobs:
             echo "$certs" | grep -q 'certificate DN: CN=Kemudi' || {
               echo "::error::$apk is not signed with the Kemudi key"; exit 1; }
           done
-          # Newer apksigner names signers "Signer (minSdkVersion=..., ...)" instead of
-          # "Signer #1", so match any signer line.
+          # The line's prefix depends on the apksigner version and signature scheme
+          # ("Signer #1", "V2 Signer: ", ...), so match only its tail.
           "$apksigner" verify --print-certs "dist/kemudi-$version-arm64-v8a.apk" \
-            | sed -n 's/^Signer.*certificate SHA-256 digest: //p' | head -n 1 > "$RUNNER_TEMP/cert-sha256"
+            | sed -n 's/.*certificate SHA-256 digest: //p' | head -n 1 > "$RUNNER_TEMP/cert-sha256"
           if [ ! -s "$RUNNER_TEMP/cert-sha256" ]; then
             echo "::error::apksigner printed no certificate SHA-256 digest"
             exit 1

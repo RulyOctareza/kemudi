@@ -6,12 +6,55 @@ import 'package:flutter/painting.dart';
 import 'package:flutter_map/flutter_map.dart';
 
 /// flutter_map's dark-mode matrix: colors inverted, then the hue turned by 180 degrees.
+/// It turns the white fill of minor roads black on a near-black ground, so the passes
+/// below put the roads back.
 const darkTileFilter = ColorFilter.matrix(<double>[
   0.574, -1.43, -0.144, 0, 255, //
   -0.426, -0.43, -0.144, 0, 255, //
   -0.426, -1.43, 0.856, 0, 255, //
   0, 0, 0, 1, 0, //
 ]);
+
+/// Near-white pixels of the light tile (minor roads, label halos) as a cool grey,
+/// everything else black. Blue weighs most so the pale-yellow fill OSM gives school and
+/// hospital grounds stays below the threshold.
+final minorRoadFilter = _lift(
+  weights: (0.3, 0.3, 0.4),
+  threshold: 0.965,
+  gain: 28,
+  color: (0.30, 0.33, 0.38),
+);
+
+/// Yellow and orange road fills (secondary and primary roads) as a dim amber,
+/// everything else black: red plus green minus blue separates them from land.
+final majorRoadFilter = _lift(
+  weights: (1, 1, -1),
+  threshold: 1.15,
+  gain: 20,
+  color: (0.42, 0.36, 0.16),
+);
+
+/// A matrix giving `color * clamp(gain * (weights . rgb - threshold))`, rgb in 0..1.
+ColorFilter _lift({
+  required (double, double, double) weights,
+  required double threshold,
+  required double gain,
+  required (double, double, double) color,
+}) {
+  List<double> row(double c) => [
+        gain * weights.$1 * c,
+        gain * weights.$2 * c,
+        gain * weights.$3 * c,
+        0,
+        -gain * threshold * 255 * c,
+      ];
+  return ColorFilter.matrix([
+    ...row(color.$1),
+    ...row(color.$2),
+    ...row(color.$3),
+    0, 0, 0, 1, 0, //
+  ]);
+}
 
 /// OpenStreetMap tiles, darkened once when each tile is decoded.
 ///
@@ -111,15 +154,22 @@ class _DarkTileImage extends ImageProvider<_DarkTileImage> {
     return result.future;
   }
 
-  /// Draws the tile through [darkTileFilter] once. The copy is rasterized on the raster
-  /// thread, a single 256 px pass per tile instead of a full-map pass per frame.
+  /// Draws the tile once through [darkTileFilter], then lightens it with the two road
+  /// passes. The copy is rasterized on the raster thread, three 256 px passes per tile
+  /// when it is decoded instead of a full-map pass per frame.
   static ui.Image _darken(ui.Image image) {
     final recorder = ui.PictureRecorder();
-    Canvas(recorder).drawImage(
-      image,
-      Offset.zero,
-      Paint()..colorFilter = darkTileFilter,
-    );
+    final canvas = Canvas(recorder);
+    canvas.drawImage(image, Offset.zero, Paint()..colorFilter = darkTileFilter);
+    for (final roads in [minorRoadFilter, majorRoadFilter]) {
+      canvas.drawImage(
+        image,
+        Offset.zero,
+        Paint()
+          ..colorFilter = roads
+          ..blendMode = BlendMode.lighten,
+      );
+    }
     final picture = recorder.endRecording();
     final dark = picture.toImageSync(image.width, image.height);
     picture.dispose();

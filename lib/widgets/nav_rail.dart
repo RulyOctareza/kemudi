@@ -7,8 +7,8 @@ import '../theme/car_theme.dart';
 import '../utils/format.dart';
 
 enum HeadunitSection {
-  home('Home', LucideIcons.home),
-  maps('Maps', LucideIcons.map),
+  home('Beranda', LucideIcons.home),
+  maps('Peta', LucideIcons.map),
   youtube('YouTube', LucideIcons.youtube),
   music('Musik', LucideIcons.music2);
 

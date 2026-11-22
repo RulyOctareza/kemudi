@@ -67,10 +67,10 @@ class _SeekBarState extends State<SeekBar> {
                 data: SliderTheme.of(context).copyWith(
                   trackHeight: widget.large ? 6 : 4,
                   thumbShape: RoundSliderThumbShape(
-                    enabledThumbRadius: widget.large ? 12 : 8,
+                    enabledThumbRadius: widget.large ? 12 : 10,
                   ),
                   overlayShape: RoundSliderOverlayShape(
-                    overlayRadius: widget.large ? 20 : 16,
+                    overlayRadius: widget.large ? 20 : 18,
                   ),
                 ),
                 child: Slider(

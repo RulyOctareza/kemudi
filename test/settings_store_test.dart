@@ -47,4 +47,15 @@ void main() {
     final store = await SettingsStore.load();
     expect(store.lastVideo, isNull);
   });
+
+  test('search history keeps the newest three, without repeats', () async {
+    SharedPreferences.setMockInitialValues({});
+    final store = await SettingsStore.load();
+    expect(store.searchHistory, isEmpty);
+    for (final query in ['dewa 19', 'sheila on 7', ' ', 'Dewa 19', 'tulus', 'noah']) {
+      await store.addSearch(query);
+    }
+    expect(store.searchHistory, ['noah', 'tulus', 'Dewa 19']);
+    expect((await SettingsStore.load()).searchHistory, ['noah', 'tulus', 'Dewa 19']);
+  });
 }

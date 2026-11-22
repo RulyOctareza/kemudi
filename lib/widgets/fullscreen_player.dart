@@ -33,6 +33,8 @@ class _FullscreenPlayerState extends State<FullscreenPlayer> {
   static const _controlsVisibleFor = Duration(seconds: 5);
 
   bool _showControls = true;
+  static const _skip = Duration(seconds: 10);
+
   Timer? _hideTimer;
 
   @override
@@ -151,6 +153,18 @@ class _FullscreenPlayerState extends State<FullscreenPlayer> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   ControlButton(
+                                    icon: LucideIcons.rotateCcw,
+                                    badge: '10',
+                                    size: 56,
+                                    tooltip: 'Mundur 10 detik',
+                                    onPressed: playback.canSeek
+                                        ? () => _withControls(
+                                              () => playback.seekRelative(-_skip),
+                                            )
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 24),
+                                  ControlButton(
                                     icon: LucideIcons.skipBack,
                                     size: 64,
                                     onPressed: () =>
@@ -172,6 +186,18 @@ class _FullscreenPlayerState extends State<FullscreenPlayer> {
                                     size: 64,
                                     onPressed: () =>
                                         _withControls(playback.next),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  ControlButton(
+                                    icon: LucideIcons.rotateCw,
+                                    badge: '10',
+                                    size: 56,
+                                    tooltip: 'Maju 10 detik',
+                                    onPressed: playback.canSeek
+                                        ? () => _withControls(
+                                              () => playback.seekRelative(_skip),
+                                            )
+                                        : null,
                                   ),
                                 ],
                               ),

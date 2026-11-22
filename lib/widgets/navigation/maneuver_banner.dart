@@ -83,12 +83,21 @@ class ManeuverBanner extends StatelessWidget {
 class _FullBanner extends StatelessWidget {
   const _FullBanner({required this.progress});
 
+  static const _followsCloselyMeters = 300.0;
+
   final NavProgress progress;
 
   @override
   Widget build(BuildContext context) {
     final next = progress.nextStep;
-    final after = progress.stepAfter;
+    // The maneuver after the next one matters only when it follows closely (the driver
+    // must already pick a lane) or ends the trip; otherwise the line is noise.
+    final following = progress.stepAfter;
+    final after = following != null &&
+            (following.type == ManeuverType.arrive ||
+                next.distance <= _followsCloselyMeters)
+        ? following
+        : null;
     return SurfaceCard(
       color: CarTheme.surfaceHigh,
       padding: const EdgeInsets.all(14),

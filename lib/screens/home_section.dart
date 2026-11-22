@@ -76,6 +76,7 @@ class HomeSection extends StatelessWidget {
                           active: active,
                           interactive: false,
                           showControls: false,
+                          shortAttribution: true,
                           tilesEnabled: tilesEnabled,
                           overlayInsets: guiding
                               ? const EdgeInsets.only(top: 64)

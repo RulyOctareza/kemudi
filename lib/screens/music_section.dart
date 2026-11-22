@@ -108,6 +108,7 @@ class MusicSection extends StatelessWidget {
           children: [
             ControlButton(
               icon: LucideIcons.rotateCcw,
+              badge: '10',
               size: 52,
               onPressed:
                   playback.canSeek ? () => playback.seekRelative(-_skip) : null,
@@ -135,6 +136,7 @@ class MusicSection extends StatelessWidget {
             ),
             ControlButton(
               icon: LucideIcons.rotateCw,
+              badge: '10',
               size: 52,
               onPressed:
                   playback.canSeek ? () => playback.seekRelative(_skip) : null,
@@ -154,7 +156,7 @@ class MusicSection extends StatelessWidget {
             const SizedBox(width: 10),
             _Toggle(
               icon: LucideIcons.repeat,
-              label: 'Autoplay',
+              label: 'Putar otomatis',
               value: playback.autoplay,
               onChanged: (_) => playback.toggleAutoplay(),
             ),

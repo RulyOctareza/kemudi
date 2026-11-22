@@ -63,7 +63,7 @@ void main() {
   testWidgets('opens on the dashboard with the four menus', (tester) async {
     await pumpApp(tester, _Source());
 
-    for (final label in ['Home', 'Maps', 'YouTube', 'Musik']) {
+    for (final label in ['Beranda', 'Peta', 'YouTube', 'Musik']) {
       expect(find.bySemanticsLabel(label), findsOneWidget);
     }
     expect(find.text('Belum ada yang diputar'), findsOneWidget);

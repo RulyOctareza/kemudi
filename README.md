@@ -11,6 +11,11 @@ YouTube without ads, music, steering-wheel buttons and turn-by-turn navigation.
 Indonesian. Kemudi is an independent open-source project and is not affiliated with,
 endorsed or sponsored by YouTube or Google.
 
+<p align="center">
+  <img src="docs/screenshots/youtube.png" width="49%" alt="YouTube menu: search with voice input, recent searches, categories, the inline player and the video grid">
+  <img src="docs/screenshots/musik.png" width="49%" alt="Musik screen: artwork, seek bar, large controls with 10-second jumps, Audio saja and Putar otomatis">
+</p>
+
 ## Features
 
 - **Beranda** (home): a dashboard with the clock, a dark map following the car, what is

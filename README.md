@@ -51,11 +51,13 @@ endorsed or sponsored by YouTube or Google.
 Kemudi needs Android 7.0 or newer; picture-in-picture needs Android 8.0. For Indonesian voice
 prompts, install Google's Speech Services (Google TTS) with the Indonesian voice.
 
-**Android developer verification.** Since 30 September 2026 Android requires apps on
-certified devices in Brazil, Indonesia, Singapore and Thailand to come from a developer
-registered with Google, and this extends worldwide in 2027. Kemudi is not registered. If
-Android refuses to install it, use Android's flow for installing unverified apps, or install
-from a computer with `adb install kemudi-<version>-<abi>.apk`.
+**"App blocked to protect your device".** Kemudi is not registered with Google's
+Android developer verification, which certified devices in Brazil, Indonesia, Singapore and
+Thailand have required since 30 September 2026 and which extends worldwide in 2027.
+Installing it from a browser or file manager therefore shows a Google Play Protect dialog
+saying it has not seen apps from this developer before. Open **More details** (*Detail
+selengkapnya*) and tap **Install anyway** (*Tetap instal*). Installing from a computer with
+`adb install kemudi-<version>-<abi>.apk` skips the dialog.
 
 ## Updates
 
@@ -201,10 +203,11 @@ SponsorBlock, Audio Only, picture-in-picture, tombol setir/Bluetooth, dan naviga
 demi belokan dengan suara bahasa Indonesia.
 
 - **Pasang:** unduh APK dari [rilis terbaru](https://github.com/RulyOctareza/kemudi/releases/latest):
-  `arm64-v8a` untuk kebanyakan HP, `armeabi-v7a` untuk HP 32-bit (mis. Galaxy A6+). Jika
-  Android menolak memasang (verifikasi developer Android berlaku di Indonesia sejak 30
-  September 2026), pakai alur pemasangan aplikasi tak terverifikasi di Android atau
-  `adb install`.
+  `arm64-v8a` untuk kebanyakan HP, `armeabi-v7a` untuk HP 32-bit (mis. Galaxy A6+). Saat
+  dipasang, Google Play Protect menampilkan "Aplikasi diblokir untuk melindungi perangkat
+  Anda" karena Kemudi belum terdaftar di verifikasi developer Android: buka **Detail
+  selengkapnya**, lalu ketuk **Tetap instal**. Lewat komputer, `adb install` tidak
+  menampilkan dialog itu.
 - **Update:** pakai [Obtainium](https://github.com/ImranR98/Obtainium) dengan alamat repo
   ini, atau pasang APK baru di atas yang lama; pengaturan tetap tersimpan.
 - **Keselamatan:** atur tujuan dan tontonan sebelum berangkat; saat berkendara pakai Audio

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtube_car_headunit/utils/format.dart';
+import 'package:kemudi/utils/format.dart';
 
 void main() {
   test('minutes and seconds under an hour', () {

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtube_car_headunit/models/navigation.dart';
-import 'package:youtube_car_headunit/services/route_instructions.dart';
+import 'package:kemudi/models/navigation.dart';
+import 'package:kemudi/services/route_instructions.dart';
 
 void main() {
   group('compileInstruction', () {

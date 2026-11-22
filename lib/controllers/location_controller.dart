@@ -119,6 +119,7 @@ class LocationController extends ChangeNotifier with WidgetsBindingObserver {
                 notificationTitle: 'Navigasi aktif',
                 notificationText: 'Panduan rute tetap berjalan.',
                 notificationChannelName: 'Navigasi',
+                notificationIcon: AndroidResource(name: 'ic_stat_kemudi'),
                 enableWakeLock: true,
                 setOngoing: true,
               )

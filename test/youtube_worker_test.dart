@@ -1,10 +1,10 @@
 import 'dart:isolate';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtube_car_headunit/models/car_video.dart';
-import 'package:youtube_car_headunit/services/video_source.dart';
-import 'package:youtube_car_headunit/services/youtube_service.dart';
-import 'package:youtube_car_headunit/services/youtube_worker.dart';
+import 'package:kemudi/models/car_video.dart';
+import 'package:kemudi/services/video_source.dart';
+import 'package:kemudi/services/youtube_service.dart';
+import 'package:kemudi/services/youtube_worker.dart';
 
 CarVideo _video(String id) => CarVideo(
       id: id,

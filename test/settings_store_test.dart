@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:youtube_car_headunit/models/car_video.dart';
-import 'package:youtube_car_headunit/services/settings_store.dart';
+import 'package:kemudi/models/car_video.dart';
+import 'package:kemudi/services/settings_store.dart';
 
 void main() {
   test('defaults when nothing is stored', () async {

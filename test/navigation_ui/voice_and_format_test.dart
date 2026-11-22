@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtube_car_headunit/models/navigation.dart';
-import 'package:youtube_car_headunit/services/voice_guidance.dart';
-import 'package:youtube_car_headunit/widgets/navigation/nav_format.dart';
+import 'package:kemudi/models/navigation.dart';
+import 'package:kemudi/services/voice_guidance.dart';
+import 'package:kemudi/widgets/navigation/nav_format.dart';
 
 class _RecordingSpeech implements SpeechEngine {
   _RecordingSpeech({this.available = true});

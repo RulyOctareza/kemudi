@@ -447,7 +447,7 @@ class _CarMapState extends State<CarMap> with SingleTickerProviderStateMixin {
               // filter over the layer on every frame.
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.carheadunit.youtube_car_headunit',
+                userAgentPackageName: 'io.github.rulyoctareza.kemudi',
                 tileProvider: _tiles,
               ),
             if (nav != null)

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtube_car_headunit/services/stream_selection.dart';
+import 'package:kemudi/services/stream_selection.dart';
 
 HlsVariant variant(
   int height, {

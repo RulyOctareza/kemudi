@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kemudi mark: a steering wheel whose hub is a play button. The triangle is a hole rather
+     than a dark shape, so this one drawable also serves as the themed-icon monochrome layer.
+     Everything stays inside the adaptive icon's 66 dp safe zone (radius 33). The legacy PNGs
+     in mipmap-*/ are rendered from the same geometry; change both together. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Rim -->
+    <path
+        android:fillColor="#4C9EFF"
+        android:fillType="evenOdd"
+        android:pathData="M54,24 A30,30 0 1,1 54,84 A30,30 0 1,1 54,24 Z M54,30 A24,24 0 1,0 54,78 A24,24 0 1,0 54,30 Z" />
+    <!-- Spokes, stopping at the hub so none shows through the triangle -->
+    <path
+        android:fillColor="#4C9EFF"
+        android:pathData="M29,51.5 L43,51.5 L43,56.5 L29,56.5 Z M65,51.5 L79,51.5 L79,56.5 L65,56.5 Z M51.5,65 L56.5,65 L56.5,79 L51.5,79 Z" />
+    <!-- Hub with the play triangle cut out -->
+    <path
+        android:fillColor="#4C9EFF"
+        android:fillType="evenOdd"
+        android:pathData="M54,42 A12,12 0 1,1 54,66 A12,12 0 1,1 54,42 Z M50,48 L50,60 L60.5,54 Z" />
+</vector>

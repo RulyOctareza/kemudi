@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtube_car_headunit/utils/auto_retry.dart';
+import 'package:kemudi/utils/auto_retry.dart';
 
 void main() {
   test('runs after each delay until the delays are used up', () async {

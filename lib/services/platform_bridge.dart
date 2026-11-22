@@ -16,7 +16,7 @@ class PlatformBridge {
   factory PlatformBridge() => _instance;
 
   static const MethodChannel _channel =
-      MethodChannel('com.carheadunit.youtube_car_headunit/pip');
+      MethodChannel('io.github.rulyoctareza.kemudi/pip');
 
   final ValueNotifier<bool> isInPip = ValueNotifier<bool>(false);
 

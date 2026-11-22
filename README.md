@@ -1,4 +1,4 @@
-# YouTube Car (youtube_car_headunit)
+# Kemudi
 
 Flutter Android app that turns a phone in the car into a head unit: a dashboard with a
 live map and what is playing, and four menus (Home, Maps, YouTube, Musik). YouTube plays
@@ -42,7 +42,7 @@ flutter build apk --release --target-platform android-arm --dart-define-from-fil
 ```
 
 Raise `version` in `pubspec.yaml` for every build that goes onto the phone, so
-`adb shell dumpsys package com.carheadunit.youtube_car_headunit | grep versionName` tells
+`adb shell dumpsys package io.github.rulyoctareza.kemudi | grep versionName` tells
 which one is installed.
 
 Measuring builds: `--dart-define=FRAME_LOG=true` prints frame costs, UI stalls and timing
@@ -50,7 +50,7 @@ marks to logcat (tag `flutter`); with `--profile` and `--dart-define=BUILD_PROFI
 also prints the widget builds and layouts of 3 ms or more. Both are compiled out otherwise.
 
 Uncaught errors and playback failures the driver saw are kept on the phone:
-`adb pull /sdcard/Android/data/com.carheadunit.youtube_car_headunit/files/errors.log`.
+`adb pull /sdcard/Android/data/io.github.rulyoctareza.kemudi/files/errors.log`.
 
 Requires Flutter 3.35 or newer. PiP needs Android 8.0+.
 
@@ -186,7 +186,7 @@ each segment once per video.
 
 - Frame pacing as the screen shows it: `adb shell dumpsys SurfaceFlinger --latency-clear`,
   do the gesture, then `adb shell "dumpsys SurfaceFlinger --latency '<layer>'"` with the
-  app's `SurfaceView - com.carheadunit...` layer from `dumpsys SurfaceFlinger --list`.
+  app's `SurfaceView - io.github.rulyoctareza.kemudi...` layer from `dumpsys SurfaceFlinger --list`.
   Gaps between present times in 16.7 ms steps are missed refreshes. The buffer holds the
   last 127 frames.
 - Frame costs: build with `--dart-define=FRAME_LOG=true` and read `adb logcat` (tag

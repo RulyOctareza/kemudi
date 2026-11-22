@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 
 /// Keeps uncaught errors, and playback failures the driver saw, in a file on the phone,
 /// so a problem on the road can be read afterwards:
-/// `adb pull /sdcard/Android/data/com.carheadunit.youtube_car_headunit/files/errors.log`.
+/// `adb pull /sdcard/Android/data/io.github.rulyoctareza.kemudi/files/errors.log`.
 ///
 /// Nothing leaves the phone. Writes are appended in order off the UI's way; the file is
 /// capped at [_maxBytes] and the previous one is kept as `errors.old.log`.

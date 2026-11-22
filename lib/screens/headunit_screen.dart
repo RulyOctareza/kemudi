@@ -342,9 +342,30 @@ class _HeadunitScreenState extends State<HeadunitScreen>
     return Stack(
       children: [
         for (final section in HeadunitSection.values)
-          if (_visited.contains(section)) _slot(section, _build(section)),
+          if (_visited.contains(section)) _slot(section, _cachedBuild(section)),
       ],
     );
+  }
+
+  /// Section widgets with the inputs they were built from.
+  final Map<HeadunitSection, (Object?, Widget)> _built = {};
+
+  /// Reuses a section's widget while its inputs are unchanged. A fresh instance (new
+  /// callbacks) makes Flutter rebuild that whole section, and rebuilding all four on
+  /// every menu switch cost 24-38 ms of UI thread on the A6+. Inputs read from this
+  /// state other than the long-lived controllers must be listed here.
+  Widget _cachedBuild(HeadunitSection section) {
+    final active = section == _section;
+    final Object? inputs = switch (section) {
+      HeadunitSection.home => (active, _resumeVideo),
+      HeadunitSection.maps => active,
+      HeadunitSection.youtube || HeadunitSection.music => null,
+    };
+    final cached = _built[section];
+    if (cached != null && cached.$1 == inputs) return cached.$2;
+    final built = _build(section);
+    _built[section] = (inputs, built);
+    return built;
   }
 
   Widget _slot(HeadunitSection section, Widget child) =>
@@ -436,7 +457,22 @@ class _SectionSlotState extends State<_SectionSlot>
         offstage: !widget.active,
         child: TickerMode(
           enabled: widget.active,
-          child: FadeTransition(opacity: _fade, child: widget.child),
+          // The fade-in is the background color fading out over the section, which
+          // looks the same as fading the section in over the background. Fading the
+          // section itself drew all of it into an offscreen layer on every fade frame
+          // (20-60 ms of raster on the A6+ with the map card or the grid).
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              widget.child,
+              IgnorePointer(
+                child: FadeTransition(
+                  opacity: ReverseAnimation(_fade),
+                  child: const ColoredBox(color: CarTheme.bg),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

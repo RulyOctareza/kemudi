@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -38,6 +40,14 @@ class CarAudioHandler extends BaseAudioHandler {
 
   MediaCommands? commands;
 
+  /// Gives a local file for a video's artwork, or null. Without it the media item has
+  /// no artwork: a remote artUri makes audio_service download it on the UI isolate.
+  Future<Uri?> Function(CarVideo video)? artwork;
+
+  /// Artwork files already known, by video id.
+  final Map<String, Uri> _art = {};
+  final Map<String, Future<void>> _artLoads = {};
+
   @override
   Future<void> play() async => commands?.play();
 
@@ -67,16 +77,37 @@ class CarAudioHandler extends BaseAudioHandler {
   /// Shows [video] in the notification and lockscreen.
   void setNowPlaying(CarVideo video, {Duration? duration}) {
     final length = duration ?? video.duration;
+    final art = _art[video.id];
     mediaItem.add(
       MediaItem(
         id: video.id,
         title: video.title,
         artist: video.uploader,
         album: 'YouTube Car',
-        artUri: Uri.tryParse(video.thumbnail),
+        artUri: art,
         duration: video.isLive || length <= Duration.zero ? null : length,
       ),
     );
+    if (art == null) _artLoads[video.id] ??= _loadArt(video);
+  }
+
+  /// Adds the artwork to the media item once its file is there, if the item still shows
+  /// [video].
+  Future<void> _loadArt(CarVideo video) async {
+    try {
+      final uri = await artwork?.call(video);
+      if (uri == null) return;
+      if (_art.length >= 50) _art.clear();
+      _art[video.id] = uri;
+      final item = mediaItem.valueOrNull;
+      if (item != null && item.id == video.id && item.artUri == null) {
+        mediaItem.add(item.copyWith(artUri: uri));
+      }
+    } catch (_) {
+      // No artwork is fine; the notification shows the title only.
+    } finally {
+      unawaited(_artLoads.remove(video.id));
+    }
   }
 
   /// Publishes playback state. audio_service extrapolates the position while playing, so

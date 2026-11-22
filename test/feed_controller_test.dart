@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:youtube_car_headunit/controllers/feed_controller.dart';
 import 'package:youtube_car_headunit/models/car_video.dart';
 import 'package:youtube_car_headunit/services/video_source.dart';
+import 'package:youtube_car_headunit/utils/auto_retry.dart';
 
 CarVideo video(String id) => CarVideo(
       id: id,
@@ -84,6 +85,55 @@ void main() {
     await feed.retry();
     expect(feed.error, isNull);
     expect(feed.videos.single.id, 'x');
+  });
+
+  test('a search that failed for lack of signal loads again by itself',
+      () async {
+    final source = FakeSource({})
+      ..searchError = const YouTubeServiceException.transient(
+        'Tidak ada koneksi internet.',
+      );
+    var online = false;
+    final feed = FeedController(
+      source,
+      autoRetry: AutoRetry(
+        delays: const [Duration(seconds: 30)],
+        probeEvery: const Duration(milliseconds: 10),
+        online: () async => online,
+      ),
+    );
+    await feed.search('musik');
+    expect(feed.error, contains('Mencoba lagi otomatis'));
+    expect(source.searched, ['musik']);
+
+    source
+      ..searchError = null
+      ..pages['musik'] = [
+        ['a'],
+      ];
+    online = true;
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    expect(source.searched, ['musik', 'musik']);
+    expect(feed.error, isNull);
+    expect(feed.videos.single.id, 'a');
+    feed.dispose();
+  });
+
+  test('a failure that will not pass is not retried', () async {
+    final source = FakeSource({})
+      ..searchError = const YouTubeServiceException('Video tidak tersedia.');
+    final feed = FeedController(
+      source,
+      autoRetry: AutoRetry(
+        delays: const [Duration(milliseconds: 1)],
+        online: () async => true,
+      ),
+    );
+    await feed.search('musik');
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(source.searched, ['musik']);
+    expect(feed.error, 'Video tidak tersedia.');
+    feed.dispose();
   });
 
   test('loadMore appends the next page and drops repeats', () async {

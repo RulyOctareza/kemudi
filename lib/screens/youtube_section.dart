@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../controllers/feed_controller.dart';
 import '../controllers/playback_controller.dart';
 import '../models/car_video.dart';
+import '../widgets/listenable_selector.dart';
 import '../widgets/player_widget.dart';
 import '../widgets/search_header.dart';
 import '../widgets/video_feed.dart';
@@ -51,11 +52,15 @@ class YouTubeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Only whether a video is loaded matters here; the inline player and the grid cards
+    // listen to playback themselves. Listening to all of playback rebuilt the header and
+    // the whole grid on every play, pause, loading change and new selection.
     return ListenableBuilder(
-      listenable: Listenable.merge([playback, feed]),
-      builder: (context, _) {
-        final current = playback.current;
-        return Column(
+      listenable: feed,
+      builder: (context, _) => ListenableSelector<bool>(
+        listenable: playback,
+        selector: () => playback.current != null,
+        builder: (context, hasCurrent) => Column(
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
@@ -79,7 +84,7 @@ class YouTubeSection extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (current != null)
+                  if (hasCurrent)
                     SizedBox(
                       width: 300,
                       child: SingleChildScrollView(
@@ -94,7 +99,8 @@ class YouTubeSection extends StatelessWidget {
                   Expanded(
                     child: VideoFeed(
                       feed: feed,
-                      selectedId: current?.id,
+                      selection: playback,
+                      selectedId: () => playback.current?.id,
                       onSelect: onSelect,
                     ),
                   ),
@@ -102,8 +108,8 @@ class YouTubeSection extends StatelessWidget {
               ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }

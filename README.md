@@ -35,7 +35,22 @@ flutter analyze
 
 `mapbox.local.json` holds the Mapbox token (`{"MAPBOX_TOKEN": "pk..."}`) and is gitignored;
 never commit it. Without it the app still runs and routes with OSRM only. Release builds
-need the same flag: `flutter build apk --release --dart-define-from-file=mapbox.local.json`.
+need the same flag; the Galaxy A6+ runs 32-bit ARM only, so the APK carries just that ABI:
+
+```sh
+flutter build apk --release --target-platform android-arm --dart-define-from-file=mapbox.local.json
+```
+
+Raise `version` in `pubspec.yaml` for every build that goes onto the phone, so
+`adb shell dumpsys package com.carheadunit.youtube_car_headunit | grep versionName` tells
+which one is installed.
+
+Measuring builds: `--dart-define=FRAME_LOG=true` prints frame costs, UI stalls and timing
+marks to logcat (tag `flutter`); with `--profile` and `--dart-define=BUILD_PROFILE=true` it
+also prints the widget builds and layouts of 3 ms or more. Both are compiled out otherwise.
+
+Uncaught errors and playback failures the driver saw are kept on the phone:
+`adb pull /sdcard/Android/data/com.carheadunit.youtube_car_headunit/files/errors.log`.
 
 Requires Flutter 3.35 or newer. PiP needs Android 8.0+.
 

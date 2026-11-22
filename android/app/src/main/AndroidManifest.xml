@@ -66,6 +66,14 @@
         <meta-data
             android:name="io.flutter.embedding.android.EnableImpeller"
             android:value="false" />
+        <!-- Dart runs on its own UI thread, not on Android's main thread (the default since
+             Flutter 3.29). Plugins do blocking work on the main thread: ExoPlayer's release
+             on every skip (~100 ms) and the TTS engine switch at start (~500 ms) froze the
+             UI on the A6+ while the threads were merged. Recheck when upgrading Flutter;
+             the opt-out is meant to be temporary. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.DisableMergedPlatformUIThread"
+            android:value="true" />
 
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

@@ -23,7 +23,11 @@ class _FakeApi implements YouTubeApi {
   Future<VideoPage> search(String query) async {
     switch (query) {
       case 'error':
-        throw const YouTubeServiceException('Tidak ada koneksi internet.');
+        throw const YouTubeServiceException.transient(
+          'Tidak ada koneksi internet.',
+        );
+      case 'gone':
+        throw const YouTubeServiceException('Video tidak tersedia.');
       case 'crash':
         throw StateError('parser bug');
       case 'exit':
@@ -99,12 +103,20 @@ void main() {
     await expectLater(
       worker.search('error'),
       throwsA(isA<YouTubeServiceException>()
-          .having((e) => e.message, 'message', 'Tidak ada koneksi internet.')),
+          .having((e) => e.message, 'message', 'Tidak ada koneksi internet.')
+          .having((e) => e.transient, 'transient', isTrue)),
+    );
+    await expectLater(
+      worker.search('gone'),
+      throwsA(isA<YouTubeServiceException>()
+          .having((e) => e.transient, 'transient', isFalse)),
     );
     await expectLater(
       worker.search('crash'),
-      throwsA(isA<YouTubeServiceException>().having(
-          (e) => e.message, 'message', 'Gagal memuat dari YouTube. Coba lagi.')),
+      throwsA(isA<YouTubeServiceException>()
+          .having((e) => e.message, 'message',
+              'Gagal memuat dari YouTube. Coba lagi.')
+          .having((e) => e.transient, 'transient', isTrue)),
     );
     // The worker survives failed tasks.
     expect((await worker.search('lagi')).videos.single.id, 'lagi-1');
@@ -113,7 +125,8 @@ void main() {
   test('a worker that dies fails its request and is started again', () async {
     await expectLater(
       worker.search('exit'),
-      throwsA(isA<YouTubeServiceException>()),
+      throwsA(isA<YouTubeServiceException>()
+          .having((e) => e.transient, 'transient', isTrue)),
     );
     expect((await worker.search('lagu')).videos.single.id, 'lagu-1');
   });

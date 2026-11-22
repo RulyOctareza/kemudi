@@ -4,6 +4,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'controllers/drive_simulator.dart';
@@ -11,6 +12,7 @@ import 'controllers/feed_controller.dart';
 import 'controllers/location_controller.dart';
 import 'controllers/navigation_controller.dart';
 import 'controllers/playback_controller.dart';
+import 'models/car_video.dart';
 import 'screens/headunit_screen.dart';
 import 'services/car_audio_handler.dart';
 import 'services/recent_destinations.dart';
@@ -19,10 +21,12 @@ import 'services/video_source.dart';
 import 'services/voice_guidance.dart';
 import 'services/youtube_worker.dart';
 import 'theme/car_theme.dart';
+import 'utils/error_log.dart';
 import 'utils/frame_log.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorLog.install();
   startFrameLog();
   HttpOverrides.global = _CarHttpOverrides();
 
@@ -127,13 +131,26 @@ class _YouTubeCarAppState extends State<YouTubeCarApp> {
   /// guidance can be checked on the phone without moving; compiled out otherwise.
   DriveSimulator? _simulator;
 
+  Future<Directory>? _cacheDir;
+
   @override
   void initState() {
     super.initState();
+    if (widget.platformServices) widget.audioHandler.artwork = _artworkFile;
     if (kSimulateDrive) {
       _simulator = DriveSimulator(location: _location, navigation: _navigation)
         ..attach();
     }
+  }
+
+  /// The media session's artwork as a local file, downloaded by the YouTube worker.
+  Future<Uri?> _artworkFile(CarVideo video) async {
+    final dir = await (_cacheDir ??= getTemporaryDirectory());
+    final path = await _youtube.saveFile(
+      Uri.parse(video.thumbnail),
+      '${dir.path}/artwork/${video.id}.jpg',
+    );
+    return path == null ? null : Uri.file(path);
   }
 
   @override

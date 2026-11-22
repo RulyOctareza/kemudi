@@ -13,6 +13,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 import '../models/car_video.dart';
 import '../utils/format.dart';
+import '../utils/frame_log.dart';
 import 'stream_selection.dart';
 import 'video_source.dart';
 
@@ -113,9 +114,18 @@ class YouTubeService implements YouTubeApi {
     return page;
   }
 
-  Future<SearchList> _search(String query) => _guard(
-        () => _yt.search.searchContent(query, filter: TypeFilters.video),
-      );
+  Future<SearchList> _search(String query) => _guard(() async {
+        try {
+          return await _yt.search
+              .searchContent(query, filter: TypeFilters.video);
+        } on TransientFailureException {
+          // YouTube sometimes serves a search page without its initial data (seen on
+          // the phone right after start); the same request a moment later works. One
+          // retry, no loop (anti-bot).
+          await Future<void>.delayed(const Duration(seconds: 1));
+          return _yt.search.searchContent(query, filter: TypeFilters.video);
+        }
+      });
 
   @override
   Future<VideoPage> nextPage(VideoPage page) async {
@@ -169,9 +179,19 @@ class YouTubeService implements YouTubeApi {
         );
       }
       if (quality.height > 360) {
+        // Both lookups start together: many uploads have no HLS master, and waiting for
+        // that answer before asking for 360p added its time to every such video.
+        // ignore() keeps a 360p failure while HLS is pending from counting as unhandled,
+        // which would end the worker isolate; awaiting sd below still receives it.
+        final sd = _resolveProgressive(
+          video.id,
+          wantVideo: true,
+          downgraded: true,
+        )..ignore();
         final hd = await _resolveHls(video.id, quality);
+        frameMark('hls lookup ${hd != null}');
         if (hd != null) return hd;
-        return _resolveProgressive(video.id, wantVideo: true, downgraded: true);
+        return await sd;
       }
       return _resolveProgressive(video.id, wantVideo: !quality.isAudioOnly);
     });
@@ -253,7 +273,8 @@ class YouTubeService implements YouTubeApi {
         label: live ? 'LIVE' : '${pick.height}p',
         videoUri: quality.isAudioOnly
             ? null
-            : hlsMasterDataUri(buildHlsMaster(variant: pick, audioUrl: audioUrl)),
+            : hlsMasterDataUri(
+                buildHlsMaster(variant: pick, audioUrl: audioUrl)),
         videoIsHls: true,
         audioUri: audioUrl,
         audioIsHls: true,
@@ -283,11 +304,20 @@ class YouTubeService implements YouTubeApi {
   }) async {
     StreamManifest manifest;
     try {
+      // Without the watch page: by default getManifest first downloads and parses the
+      // whole watch page HTML, which the android client's direct stream URLs do not
+      // need (1-2 s of the 1.8-2.8 s this lookup took on the A6+).
       manifest = await _yt.videos.streamsClient.getManifest(
         id,
         ytClients: [YoutubeApiClient.android],
+        requireWatchPage: false,
       );
     } catch (e) {
+      // No connection: the default path below would retry for ~40 s before failing,
+      // which stalls playback's own retries in a dead spot.
+      if (e is IOException || e is http.ClientException || e is TimeoutException) {
+        rethrow;
+      }
       // The library's default client list (android, ios, then tv) is slower but works for
       // some restricted videos the android client alone refuses.
       debugPrint('android manifest failed for $id, retrying defaults: $e');
@@ -353,9 +383,12 @@ class YouTubeService implements YouTubeApi {
     } on YouTubeServiceException {
       rethrow;
     } on SocketException catch (e) {
-      throw YouTubeServiceException('Tidak ada koneksi internet.', e);
+      throw YouTubeServiceException.transient('Tidak ada koneksi internet.', e);
     } on TimeoutException catch (e) {
-      throw YouTubeServiceException('YouTube tidak merespons. Coba lagi.', e);
+      throw YouTubeServiceException.transient(
+        'YouTube tidak merespons. Coba lagi.',
+        e,
+      );
     } on http.ClientException catch (e) {
       // YouTube answers bursts of requests with a redirect loop to its anti-bot page,
       // which the http package reports as "Redirect limit exceeded".
@@ -365,7 +398,7 @@ class YouTubeService implements YouTubeApi {
           e,
         );
       }
-      throw YouTubeServiceException('Koneksi ke YouTube gagal.', e);
+      throw YouTubeServiceException.transient('Koneksi ke YouTube gagal.', e);
     } on RequestLimitExceededException catch (e) {
       throw YouTubeServiceException(
         'YouTube sedang membatasi permintaan. Coba lagi beberapa menit lagi.',
@@ -389,7 +422,10 @@ class YouTubeService implements YouTubeApi {
       );
     } catch (e) {
       debugPrint('YouTube request failed: $e');
-      throw YouTubeServiceException('Gagal memuat dari YouTube. Coba lagi.', e);
+      throw YouTubeServiceException.transient(
+        'Gagal memuat dari YouTube. Coba lagi.',
+        e,
+      );
     }
   }
 }

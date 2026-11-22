@@ -9,14 +9,7 @@ import '../controllers/location_controller.dart';
 import '../controllers/navigation_controller.dart';
 import '../models/navigation.dart';
 import '../theme/car_theme.dart';
-
-/// flutter_map's dark-mode matrix: colors inverted, then the hue turned by 180 degrees.
-const _darkTiles = ColorFilter.matrix(<double>[
-  0.574, -1.43, -0.144, 0, 255, //
-  -0.426, -0.43, -0.144, 0, 255, //
-  -0.426, -1.43, 0.856, 0, 255, //
-  0, 0, 0, 1, 0, //
-]);
+import 'dark_tiles.dart';
 
 /// Dark street map that follows the car, with the route while navigation is set.
 ///
@@ -77,6 +70,10 @@ class _CarMapState extends State<CarMap> with SingleTickerProviderStateMixin {
   /// Where the car sits in the free area while driving heading-up, from its top: low,
   /// so most of the screen shows the road ahead.
   static const _headingUpCarHeight = 0.72;
+
+  /// Kept for the map's lifetime: TileLayer disposes the provider it was last given
+  /// when it unmounts, and one provider keeps one HTTP client for all tiles.
+  final DarkTileProvider _tiles = DarkTileProvider();
 
   /// North-up driving keeps the road ahead in view by placing the car back from the
   /// free area's centre against the travel direction, by these fractions of its width
@@ -446,14 +443,12 @@ class _CarMapState extends State<CarMap> with SingleTickerProviderStateMixin {
               // Standard OpenStreetMap tiles, darkened on the device: free without an API
               // key (CARTO's dark tiles now watermark keyless requests). OSM's tile policy
               // asks for a real User-Agent and no bulk or simulated-retina loading.
-              // One filter over the whole layer: flutter_map's darkModeTileBuilder filters
-              // each tile, an offscreen pass per tile on every frame.
-              ColorFiltered(
-                colorFilter: _darkTiles,
-                child: TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.carheadunit.youtube_car_headunit',
-                ),
+              // Darkened once per tile as it is decoded (DarkTileProvider), not by a
+              // filter over the layer on every frame.
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.carheadunit.youtube_car_headunit',
+                tileProvider: _tiles,
               ),
             if (nav != null)
               // Rebuilt per fix while navigating (the split point moves), not per frame.

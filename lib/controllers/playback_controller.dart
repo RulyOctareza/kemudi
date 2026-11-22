@@ -11,6 +11,9 @@ import '../services/platform_bridge.dart';
 import '../services/settings_store.dart';
 import '../services/video_source.dart';
 import '../services/youtube_service.dart';
+import '../utils/auto_retry.dart';
+import '../utils/error_log.dart';
+import '../utils/frame_log.dart';
 import '../utils/sponsor_skip.dart';
 
 enum PlaybackMode { idle, video, audio }
@@ -60,6 +63,18 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
     _subscriptions
       ..add(_audio.playerStateStream.listen(_onAudioState))
       ..add(
+        // Errors while Audio Only plays (a dropped connection) arrive here.
+        _audio.playbackEventStream.listen(
+          (_) {},
+          onError: (Object e, StackTrace _) {
+            if (_mode != PlaybackMode.audio) return;
+            debugPrint('Audio playback error: $e');
+            _recover(
+                _generation, 'Pemutaran terputus. Tekan Ulangi untuk lanjut.');
+          },
+        ),
+      )
+      ..add(
         _audio
             .createPositionStream(
               minPeriod: const Duration(milliseconds: 250),
@@ -70,6 +85,14 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
   }
 
   static const _positionSaveInterval = Duration(seconds: 10);
+
+  /// Waits before each automatic retry after a dropped connection: about two minutes in
+  /// all, enough for a tunnel or a dead spot, before the driver is asked to tap Ulangi.
+  static const _retryDelays = [2, 4, 8, 15, 30, 30, 30];
+
+  /// A pause longer than this re-resolves the streams on play: YouTube's stream URLs
+  /// expire after some hours, and an expired one fails only after ExoPlayer's retries.
+  static const _staleAfterPause = Duration(hours: 1);
   static const _sponsorNoticeDuration = Duration(seconds: 2);
 
   final StreamSource _youtube;
@@ -107,6 +130,11 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
   bool _lastVideoBuffering = false;
   DateTime _lastPositionSave = DateTime.fromMillisecondsSinceEpoch(0);
   Timer? _sponsorNoticeTimer;
+  Timer? _retryTimer;
+  Timer? _onlineProbe;
+  int _retryAttempt = 0;
+  bool _retrying = false;
+  DateTime? _pausedAt;
   bool _disposed = false;
 
   ja.AudioPlayer get _audio => _handler.player;
@@ -181,6 +209,11 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
     List<CarVideo>? queue,
     Duration? startAt,
   }) async {
+    frameMark('select ${video.id}');
+    _cancelRetry();
+    if (!_retrying) _retryAttempt = 0;
+    _retrying = false;
+    _pausedAt = null;
     if (queue != null) _queue = List.unmodifiable(queue);
     final generation = ++_generation;
     final start = startAt != null && startAt > Duration.zero && !video.isLive
@@ -210,20 +243,20 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
     unawaited(_settings.setLastVideo(video));
     unawaited(_settings.setLastPosition(start ?? Duration.zero));
 
+    frameMark('select sync done');
     await _releasePlayers(oldVideo);
+    frameMark('released');
     if (_isStale(generation)) return;
 
+    // SponsorBlock never holds the start back: its segments apply when they arrive,
+    // and the next position update skips a start that lies inside one.
+    if (!video.isLive) unawaited(_loadSegments(video.id, generation));
+
     try {
-      final results = await Future.wait<Object>([
-        _youtube.resolveStreams(video, _quality),
-        if (!video.isLive) _youtube.getSponsorSegments(video.id),
-      ]);
+      final streams = await _youtube.resolveStreams(video, _quality);
+      frameMark('streams');
       if (_isStale(generation)) return;
-      final streams = results[0] as ResolvedStreams;
       _streams = streams;
-      _segments = results.length > 1
-          ? results[1] as List<SponsorSegment>
-          : const <SponsorSegment>[];
       if (streams.downgraded) {
         _say('${_quality.label} tidak tersedia, memutar ${streams.label}');
       }
@@ -231,7 +264,8 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
       if (!_quality.isAudioOnly) {
         final videoUri = streams.videoUri;
         if (videoUri != null &&
-            await _startVideo(videoUri, streams.videoIsHls, generation, start)) {
+            await _startVideo(
+                videoUri, streams.videoIsHls, generation, start)) {
           return;
         }
         if (_isStale(generation)) return;
@@ -252,10 +286,29 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
         fallback: streams.audioFallbackUri,
       );
     } on YouTubeServiceException catch (e) {
-      _fail(generation, e.message);
+      if (e.transient) {
+        _recover(generation, e.message);
+      } else {
+        _fail(generation, e.message);
+      }
+    } on ja.PlayerException catch (e) {
+      // just_audio could not load the stream, nearly always the connection.
+      debugPrint('Audio load failed for ${video.id}: $e');
+      _recover(generation, 'Gagal memuat video. Coba lagi.');
     } catch (e) {
       debugPrint('Playback failed for ${video.id}: $e');
       _fail(generation, 'Gagal memuat video. Coba lagi.');
+    }
+  }
+
+  Future<void> _loadSegments(String videoId, int generation) async {
+    try {
+      final segments = await _youtube.getSponsorSegments(videoId);
+      frameMark('sponsor');
+      if (!_isStale(generation)) _segments = segments;
+    } catch (e) {
+      // Playback goes on without skipping.
+      debugPrint('SponsorBlock failed for $videoId: $e');
     }
   }
 
@@ -274,7 +327,9 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
       videoPlayerOptions: VideoPlayerOptions(allowBackgroundPlayback: true),
     );
     try {
+      frameMark('video init');
       await controller.initialize();
+      frameMark('video initialized');
       if (start != null) await controller.seekTo(start);
     } catch (e) {
       debugPrint('Video init failed: $e');
@@ -290,6 +345,7 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
     _video = controller;
     _mode = PlaybackMode.video;
     _loading = false;
+    _retryAttempt = 0;
     _lastVideoPlaying = false;
     _lastVideoBuffering = false;
     controller.addListener(_onVideoTick);
@@ -297,6 +353,7 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
     _pip.setAutoPip(true);
     _notify();
     unawaited(controller.play());
+    frameMark('video play');
     return true;
   }
 
@@ -328,6 +385,7 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
     if (_isStale(generation)) return;
     _mode = PlaybackMode.audio;
     _loading = false;
+    _retryAttempt = 0;
     final duration = _audio.duration ?? _current!.duration;
     _handler.setNowPlaying(_current!, duration: duration);
     progress.value = PlaybackProgress(
@@ -363,8 +421,61 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
     }
   }
 
+  /// Plays the current video again from where it stopped after a delay, for failures
+  /// that may pass (a dropped connection, an expired stream). Gives up with [message]
+  /// and the Ulangi action once [_retryDelays] are used up.
+  void _recover(int generation, String message) {
+    if (_isStale(generation)) return;
+    final current = _current;
+    if (current == null || _retryAttempt >= _retryDelays.length) {
+      _retryAttempt = 0;
+      _fail(generation, message);
+      return;
+    }
+    final delay = Duration(seconds: _retryDelays[_retryAttempt++]);
+    final position = progress.value.position;
+    debugPrint(
+        'Playback interrupted, retry $_retryAttempt in ${delay.inSeconds} s');
+    unawaited(_releasePlayers(_detachPlayers()));
+    _loading = true;
+    _error = null;
+    _handler.publish(
+      playing: false,
+      processing: AudioProcessingState.buffering,
+      position: position,
+      canSeek: false,
+    );
+    if (_retryAttempt == 1) _say('Koneksi terputus, menyambung ulang…');
+    _notify();
+    void retryNow() {
+      _cancelRetry();
+      if (_isStale(generation) || _disposed) return;
+      _retrying = true;
+      unawaited(select(current, startAt: position));
+    }
+
+    _cancelRetry();
+    _retryTimer = Timer(delay, retryNow);
+    // Retries at once when the connection is back instead of waiting out the delay
+    // (up to 30 s of silence after a tunnel). A DNS lookup is cheap and fails at once
+    // while the phone has no network.
+    _onlineProbe = Timer.periodic(const Duration(seconds: 3), (_) async {
+      if (await hasNetwork() && (_retryTimer?.isActive ?? false)) retryNow();
+    });
+  }
+
+  void _cancelRetry() {
+    _retryTimer?.cancel();
+    _onlineProbe?.cancel();
+  }
+
   void _fail(int generation, String message) {
     if (_isStale(generation)) return;
+    ErrorLog.record(
+      message,
+      null,
+      context: 'playback failed: ${_current?.id} (${_quality.label})',
+    );
     unawaited(_releasePlayers(_detachPlayers()));
     _loading = false;
     _error = message;
@@ -386,7 +497,7 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
     final value = controller.value;
     if (value.hasError) {
       debugPrint('Video playback error: ${value.errorDescription}');
-      _fail(_generation, 'Pemutaran terputus. Tekan Ulangi untuk lanjut.');
+      _recover(_generation, 'Pemutaran terputus. Tekan Ulangi untuk lanjut.');
       return;
     }
     if (!value.isInitialized) return;
@@ -456,7 +567,8 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
                   ? AudioProcessingState.completed
                   : AudioProcessingState.ready,
       position: value.position,
-      buffered: value.buffered.isEmpty ? Duration.zero : value.buffered.last.end,
+      buffered:
+          value.buffered.isEmpty ? Duration.zero : value.buffered.last.end,
       canSeek: canSeek,
     );
   }
@@ -483,6 +595,17 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
   @override
   Future<void> play() async {
     _completionHandled = false;
+    final pausedAt = _pausedAt;
+    _pausedAt = null;
+    final current = _current;
+    if (pausedAt != null &&
+        current != null &&
+        _mode != PlaybackMode.idle &&
+        !current.isLive &&
+        DateTime.now().difference(pausedAt) > _staleAfterPause) {
+      await select(current, startAt: progress.value.position);
+      return;
+    }
     switch (_mode) {
       case PlaybackMode.video:
         await _video?.play();
@@ -490,9 +613,14 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
         unawaited(_audio.play());
       case PlaybackMode.idle:
         // Play with nothing loaded (steering wheel after a restart, or after a failure):
-        // retry the current video, or resume the last one.
-        if (_loading) return;
-        final current = _current;
+        // retry the current video, or resume the last one. While a retry waits, play
+        // tries at once and keeps the retry count.
+        if (_retryTimer?.isActive ?? false) {
+          _cancelRetry();
+          _retrying = true;
+        } else if (_loading) {
+          return;
+        }
         final last = _settings.lastVideo;
         if (current != null) {
           await select(current, startAt: progress.value.position);
@@ -510,8 +638,21 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
       case PlaybackMode.audio:
         await _audio.pause();
       case PlaybackMode.idle:
+        // Pause while a retry waits stops retrying; play starts again.
+        if (_retryTimer?.isActive ?? false) {
+          _cancelRetry();
+          _loading = false;
+          _handler.publish(
+            playing: false,
+            processing: AudioProcessingState.idle,
+            position: progress.value.position,
+            canSeek: false,
+          );
+          _notify();
+        }
         return;
     }
+    _pausedAt = DateTime.now();
     _saveNow();
   }
 
@@ -651,6 +792,7 @@ class PlaybackController extends ChangeNotifier implements MediaCommands {
       subscription.cancel();
     }
     _sponsorNoticeTimer?.cancel();
+    _cancelRetry();
     unawaited(_releasePlayers(_detachPlayers()));
     if (identical(_handler.commands, this)) _handler.commands = null;
     _messages.close();

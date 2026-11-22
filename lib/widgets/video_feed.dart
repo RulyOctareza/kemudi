@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../controllers/feed_controller.dart';
 import '../models/car_video.dart';
 import '../theme/car_theme.dart';
+import 'listenable_selector.dart';
 import 'video_card.dart';
 
 /// The video grid with its loading, error and empty states. Scrolling near the end loads
@@ -13,12 +14,18 @@ class VideoFeed extends StatelessWidget {
   const VideoFeed({
     super.key,
     required this.feed,
+    required this.selection,
     required this.selectedId,
     required this.onSelect,
   });
 
   final FeedController feed;
-  final String? selectedId;
+
+  /// Notifies when the selected video may have changed; [selectedId] reads it. Each card
+  /// listens for itself, so a new selection rebuilds the two cards concerned instead of
+  /// the whole grid.
+  final Listenable selection;
+  final String? Function() selectedId;
   final ValueChanged<CarVideo> onSelect;
 
   @override
@@ -51,7 +58,9 @@ class VideoFeed extends StatelessWidget {
       onNotification: (notification) {
         // Fetch the next page well before the end, so it is usually there in time.
         final metrics = notification.metrics;
-        if (metrics.extentAfter < metrics.viewportDimension * 1.5) feed.loadMore();
+        if (metrics.extentAfter < metrics.viewportDimension * 1.5) {
+          feed.loadMore();
+        }
         return false;
       },
       child: CustomScrollView(
@@ -66,11 +75,15 @@ class VideoFeed extends StatelessWidget {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final video = videos[index];
-                    return VideoCard(
+                    return ListenableSelector<bool>(
                       key: ValueKey(video.id),
-                      video: video,
-                      isSelected: selectedId == video.id,
-                      onTap: () => onSelect(video),
+                      listenable: selection,
+                      selector: () => selectedId() == video.id,
+                      builder: (context, selected) => VideoCard(
+                        video: video,
+                        isSelected: selected,
+                        onTap: () => onSelect(video),
+                      ),
                     );
                   },
                   childCount: videos.length,

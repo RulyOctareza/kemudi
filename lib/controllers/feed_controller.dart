@@ -2,11 +2,18 @@ import 'package:flutter/foundation.dart';
 
 import '../models/car_video.dart';
 import '../services/video_source.dart';
+import '../utils/auto_retry.dart';
 import '../utils/frame_log.dart';
 
 /// The video grid: trending, search, paging and errors.
 class FeedController extends ChangeNotifier {
-  FeedController(this._source);
+  FeedController(this._source, {AutoRetry? autoRetry})
+      : _autoRetry = autoRetry ??
+            AutoRetry(
+              delays: const [3, 6, 12, 20, 30, 30, 30, 60, 60]
+                  .map((s) => Duration(seconds: s))
+                  .toList(),
+            );
 
   static const String trendingQuery = 'Musik Indonesia trending';
 
@@ -14,6 +21,10 @@ class FeedController extends ChangeNotifier {
   static const int maxItems = 120;
 
   final VideoSource _source;
+
+  /// Loads the grid again by itself after a failure that may pass (no signal when the
+  /// app starts in the car), so the driver does not have to tap Coba lagi.
+  final AutoRetry _autoRetry;
 
   List<CarVideo> _videos = const [];
   VideoPage? _lastPage;
@@ -48,7 +59,10 @@ class FeedController extends ChangeNotifier {
 
   Future<void> loadTrending() => search(trendingQuery);
 
-  Future<void> search(String query) async {
+  Future<void> search(String query) => _search(query, automatic: false);
+
+  Future<void> _search(String query, {required bool automatic}) async {
+    if (!automatic) _autoRetry.reset();
     final q = query.trim().isEmpty ? trendingQuery : query.trim();
     final generation = ++_generation;
     _query = q;
@@ -62,11 +76,17 @@ class FeedController extends ChangeNotifier {
       if (generation != _generation) return;
       _videos = List.unmodifiable(_dedupe(const [], page.videos));
       _lastPage = page;
+      _autoRetry.reset();
     } catch (e) {
       if (generation != _generation) return;
       _videos = const [];
       _lastPage = null;
       _error = e is YouTubeServiceException ? e.message : 'Gagal memuat video.';
+      if (e is YouTubeServiceException &&
+          e.transient &&
+          _autoRetry.schedule(() => _search(q, automatic: true))) {
+        _error = '$_error\nMencoba lagi otomatis saat koneksi kembali.';
+      }
     } finally {
       if (generation == _generation) {
         _loading = false;
@@ -84,7 +104,9 @@ class FeedController extends ChangeNotifier {
     try {
       final watch = kFrameLog ? (Stopwatch()..start()) : null;
       final next = await _source.nextPage(page);
-      if (watch != null) debugPrint('PAGE loaded in ${watch.elapsedMilliseconds} ms');
+      if (watch != null) {
+        debugPrint('PAGE loaded in ${watch.elapsedMilliseconds} ms');
+      }
       if (generation != _generation) return;
       _videos = List.unmodifiable(_dedupe(_videos, next.videos));
       _lastPage = next;
@@ -119,6 +141,7 @@ class FeedController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _autoRetry.cancel();
     _disposed = true;
     super.dispose();
   }

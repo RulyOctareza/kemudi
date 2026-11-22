@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:video_player/video_player.dart';
@@ -10,8 +9,12 @@ import '../controllers/playback_controller.dart';
 import '../theme/car_theme.dart';
 import 'seek_bar.dart';
 
-/// Immersive video. Tap shows the controls for a few seconds; Back or the large close
-/// button leaves.
+/// Video over the whole app. Tap shows the controls for a few seconds; Back or the large
+/// close button leaves.
+///
+/// The phone's navigation buttons stay visible: hiding and showing them (immersive mode)
+/// resizes the app's surface, a 67-100 ms hitch on the A6+ each way, while a 16:9 video
+/// is as large with the buttons as without them on this screen.
 class FullscreenPlayer extends StatefulWidget {
   const FullscreenPlayer({
     super.key,
@@ -35,7 +38,6 @@ class _FullscreenPlayerState extends State<FullscreenPlayer> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _startHideTimer();
   }
 
@@ -66,7 +68,6 @@ class _FullscreenPlayerState extends State<FullscreenPlayer> {
   @override
   void dispose() {
     _hideTimer?.cancel();
-    applyCarSystemUi();
     super.dispose();
   }
 

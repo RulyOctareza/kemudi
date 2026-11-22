@@ -22,10 +22,19 @@ abstract interface class VideoSource {
 
 /// A failure with a message ready to show the driver.
 class YouTubeServiceException implements Exception {
-  const YouTubeServiceException(this.message, [this.cause]);
+  const YouTubeServiceException(this.message, [this.cause]) : transient = false;
+
+  /// A failure that may pass on its own (no connection, a timeout, the worker died);
+  /// playback retries these by itself.
+  const YouTubeServiceException.transient(this.message, [this.cause])
+      : transient = true;
 
   final String message;
   final Object? cause;
+
+  /// Whether trying again later may work; false for answers that stay the same
+  /// (unavailable, paid or restricted videos).
+  final bool transient;
 
   @override
   String toString() => cause == null ? message : '$message ($cause)';

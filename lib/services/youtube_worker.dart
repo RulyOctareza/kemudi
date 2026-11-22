@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/car_video.dart';
 import 'video_source.dart';
@@ -53,6 +55,18 @@ class YouTubeWorker implements YouTubeApi {
   Future<List<SponsorSegment>> getSponsorSegments(String videoId) =>
       _run(_sponsorTask(videoId));
 
+  /// Downloads [url] to [path] on the worker and returns [path], or null when the
+  /// download fails. For the media session's artwork: audio_service would otherwise
+  /// fetch it on the UI isolate (its cache manager's TLS handshake, sqflite and file
+  /// writes stalled the UI for 70-110 ms on every new video on the A6+).
+  Future<String?> saveFile(Uri url, String path) async {
+    try {
+      return await _run<String?>(_saveFileTask(url, path));
+    } on YouTubeServiceException {
+      return null;
+    }
+  }
+
   // Tasks are built in static methods so each closure captures only its arguments; a
   // closure that captured `this` would drag ports and completers into the message.
   static _Task _searchTask(String query) => (state) => state.search(query);
@@ -64,6 +78,8 @@ class YouTubeWorker implements YouTubeApi {
 
   static _Task _sponsorTask(String videoId) =>
       (state) => state.api.getSponsorSegments(videoId);
+  static _Task _saveFileTask(Uri url, String path) =>
+      (state) => _saveFile(url, path);
 
   Future<T> _run<T>(_Task task) async {
     if (_disposed) throw const YouTubeServiceException(_failed);
@@ -94,7 +110,12 @@ class YouTubeWorker implements YouTubeApi {
       if (ok) {
         reply.complete(value);
       } else {
-        reply.completeError(YouTubeServiceException(value as String));
+        final (text, transient) = value as (String, bool);
+        reply.completeError(
+          transient
+              ? YouTubeServiceException.transient(text)
+              : YouTubeServiceException(text),
+        );
       }
     });
     exits.listen((_) => _onWorkerExit(ready));
@@ -108,7 +129,7 @@ class YouTubeWorker implements YouTubeApi {
     } catch (e) {
       debugPrint('YouTube worker failed to start: $e');
       _reset();
-      throw const YouTubeServiceException(_failed);
+      throw const YouTubeServiceException.transient(_failed);
     }
     return ready.future;
   }
@@ -117,14 +138,14 @@ class YouTubeWorker implements YouTubeApi {
   void _onWorkerExit(Completer<SendPort> ready) {
     if (!_disposed) debugPrint('YouTube worker exited');
     if (!ready.isCompleted) {
-      ready.completeError(const YouTubeServiceException(_failed));
+      ready.completeError(const YouTubeServiceException.transient(_failed));
     }
     _reset();
   }
 
   void _reset() {
     for (final reply in _pending.values) {
-      reply.completeError(const YouTubeServiceException(_failed));
+      reply.completeError(const YouTubeServiceException.transient(_failed));
     }
     _pending.clear();
     _replies?.close();
@@ -183,10 +204,42 @@ void _workerMain((SendPort, YouTubeApiFactory) args) {
     try {
       replies.send((id, true, await task(state)));
     } on YouTubeServiceException catch (e) {
-      replies.send((id, false, e.message));
+      replies.send((id, false, (e.message, e.transient)));
     } catch (e) {
       debugPrint('YouTube worker task failed: $e');
-      replies.send((id, false, YouTubeWorker._failed));
+      replies.send((id, false, (YouTubeWorker._failed, true)));
     }
   });
+}
+
+/// Number of artwork files kept in the folder [_saveFile] writes to.
+const _keptFiles = 30;
+
+Future<String?> _saveFile(Uri url, String path) async {
+  final file = File(path);
+  if (await file.exists()) return path;
+  final response = await http.get(url).timeout(const Duration(seconds: 10));
+  if (response.statusCode != 200 || response.bodyBytes.isEmpty) return null;
+  await file.parent.create(recursive: true);
+  // Written beside and renamed, so a reader never sees a half-written file.
+  final partial = File('$path.part');
+  await partial.writeAsBytes(response.bodyBytes, flush: true);
+  await partial.rename(path);
+  await _prune(file.parent);
+  return path;
+}
+
+/// Keeps the newest [_keptFiles] files of [dir].
+Future<void> _prune(Directory dir) async {
+  final files = await dir.list().where((e) => e is File).cast<File>().toList();
+  if (files.length <= _keptFiles) return;
+  final dated = [for (final f in files) (f, (await f.stat()).modified)]
+    ..sort((a, b) => b.$2.compareTo(a.$2));
+  for (final (file, _) in dated.skip(_keptFiles)) {
+    try {
+      await file.delete();
+    } on FileSystemException {
+      // Already gone; nothing to keep tidy.
+    }
+  }
 }

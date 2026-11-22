@@ -1,0 +1,122 @@
+name: Release
+
+# Pushing a tag vX.Y.Z (or vX.Y.Z-rc.N for a pre-release) builds the signed APKs and
+# publishes them as a GitHub release. Steps for maintainers: CONTRIBUTING.md, Releasing.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.35.2
+          channel: stable
+          cache: true
+
+      - name: Tag matches the pubspec version
+        run: |
+          version=$(sed -n 's/^version: *\([0-9.]*\)+.*/\1/p' pubspec.yaml)
+          base=${GITHUB_REF_NAME#v}; base=${base%%-*}
+          if [ "$base" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $version in pubspec.yaml"
+            exit 1
+          fi
+
+      # Without key.properties the Gradle build silently signs with a debug key, which no
+      # installed Kemudi would accept as an update, so a missing secret stops the release.
+      - name: Release signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::Secrets ANDROID_KEYSTORE_BASE64 and ANDROID_KEYSTORE_PASSWORD are required"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/kemudi-release.jks"
+          umask 077
+          cat > android/key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEYSTORE_PASSWORD
+          keyAlias=upload
+          storeFile=$RUNNER_TEMP/kemudi-release.jks
+          EOF
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      # One APK per ABI. No universal APK: its lower versionCode would block a later switch
+      # to a per-ABI APK. No Mapbox token: a token inside a public APK can be extracted.
+      - name: Build APKs
+        run: flutter build apk --release --split-per-abi --target-platform android-arm,android-arm64
+
+      - name: Collect, check and sign-verify
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          out=build/app/outputs/flutter-apk
+          mkdir -p dist
+          cp "$out/app-arm64-v8a-release.apk" "dist/kemudi-$version-arm64-v8a.apk"
+          cp "$out/app-armeabi-v7a-release.apk" "dist/kemudi-$version-armeabi-v7a.apk"
+
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
+          for apk in dist/*.apk; do
+            certs=$("$apksigner" verify --print-certs "$apk")
+            echo "$certs" | grep -q 'certificate DN: CN=Kemudi' || {
+              echo "::error::$apk is not signed with the Kemudi key"; echo "$certs"; exit 1; }
+          done
+          "$apksigner" verify --print-certs "dist/kemudi-$version-arm64-v8a.apk" \
+            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' > "$RUNNER_TEMP/cert-sha256"
+
+          # Android 15+ phones with 16 KB memory pages load only native libraries whose
+          # LOAD segments are aligned to at least 16 KB.
+          mkdir -p "$RUNNER_TEMP/so"
+          unzip -o -q "dist/kemudi-$version-arm64-v8a.apk" 'lib/arm64-v8a/*.so' -d "$RUNNER_TEMP/so"
+          for so in "$RUNNER_TEMP"/so/lib/arm64-v8a/*.so; do
+            for align in $(readelf -lW "$so" | awk '$1 == "LOAD" {print $NF}'); do
+              if [ $((align)) -lt 16384 ]; then
+                echo "::error::$(basename "$so") has a LOAD segment aligned to $align (< 16 KB)"
+                exit 1
+              fi
+            done
+          done
+
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          base=${version%%-*}
+          notes="$RUNNER_TEMP/notes.md"
+          awk -v v="$base" '
+            index($0, "## [" v "]") == 1 { f = 1; next }
+            f && /^## \[/ { exit }
+            f && !/^\[[^]]+\]: / { print }
+          ' CHANGELOG.md > "$notes"
+          [ -s "$notes" ] || echo "See CHANGELOG.md." > "$notes"
+          {
+            echo
+            echo "### Which APK"
+            echo "- \`kemudi-$version-arm64-v8a.apk\`: most phones."
+            echo "- \`kemudi-$version-armeabi-v7a.apk\`: 32-bit phones such as the Galaxy A6+."
+            echo
+            echo "Signing certificate SHA-256: \`$(cat "$RUNNER_TEMP/cert-sha256")\`"
+            echo "Checksums: \`SHA256SUMS.txt\`."
+          } >> "$notes"
+          prerelease=""
+          case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "Kemudi $version" --notes-file "$notes" $prerelease
